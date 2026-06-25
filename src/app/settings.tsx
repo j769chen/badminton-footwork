@@ -1,5 +1,5 @@
 import Slider from '@react-native-community/slider';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -22,11 +22,13 @@ import React from 'react';
 export default function SettingsScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
+  const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
   const order = useSettings((s) => s.order);
 
   const setSwitchInterval = useSettings((s) => s.setSwitchInterval);
   const setSessionDuration = useSettings((s) => s.setSessionDuration);
+  const setSessionUntimed = useSettings((s) => s.setSessionUntimed);
   const setAudioCueEnabled = useSettings((s) => s.setAudioCueEnabled);
   const setOrder = useSettings((s) => s.setOrder);
   const reset = useSettings((s) => s.reset);
@@ -54,6 +56,25 @@ export default function SettingsScreen() {
           max={SETTINGS_LIMITS.sessionDurationSec.max}
           step={SETTINGS_LIMITS.sessionDurationSec.step}
           onChange={setSessionDuration}
+          disabled={sessionUntimed}
+          disabledValueLabel="No limit"
+          footer={
+            <View style={styles.toggleRow}>
+              <View style={styles.rowText}>
+                <Text style={styles.toggleLabel}>No time limit</Text>
+                <Text style={styles.help}>
+                  Run until you stop. The timer counts up instead of down and the
+                  session never ends on its own.
+                </Text>
+              </View>
+              <Switch
+                value={sessionUntimed}
+                onValueChange={setSessionUntimed}
+                trackColor={{ true: Colors.accent, false: Colors.border }}
+                thumbColor={Colors.text}
+              />
+            </View>
+          }
         />
 
         <View style={styles.card}>
@@ -104,6 +125,11 @@ type SliderControlProps = {
   max: number;
   step: number;
   onChange: (value: number) => void;
+  /** When true the slider is hidden and the value shows `disabledValueLabel`. */
+  disabled?: boolean;
+  disabledValueLabel?: string;
+  /** Extra content rendered at the bottom of the card (e.g. a toggle row). */
+  footer?: ReactNode;
 };
 
 function SliderControl({
@@ -115,6 +141,9 @@ function SliderControl({
   max,
   step,
   onChange,
+  disabled = false,
+  disabledValueLabel,
+  footer,
 }: SliderControlProps) {
   // Local state drives the visible control for instant feedback; the store is
   // the source of truth and is kept in sync both ways.
@@ -141,34 +170,40 @@ function SliderControl({
         <View style={styles.rowText}>
           <Text style={styles.label}>{label}</Text>
         </View>
-        <Text style={styles.value}>{format(local)}</Text>
+        <Text style={[styles.value, disabled && styles.valueMuted]}>
+          {disabled ? (disabledValueLabel ?? '--') : format(local)}
+        </Text>
       </View>
       <Text style={styles.help}>{help}</Text>
 
-      <View style={styles.sliderRow}>
-        <StepButton
-          symbol="-"
-          disabled={local <= min}
-          onPress={() => commit(local - step)}
-        />
-        <Slider
-          style={styles.slider}
-          minimumValue={min}
-          maximumValue={max}
-          step={step}
-          value={local}
-          onValueChange={setLocal}
-          onSlidingComplete={commit}
-          minimumTrackTintColor={Colors.accent}
-          maximumTrackTintColor={Colors.border}
-          thumbTintColor={Colors.accent}
-        />
-        <StepButton
-          symbol="+"
-          disabled={local >= max}
-          onPress={() => commit(local + step)}
-        />
-      </View>
+      {!disabled && (
+        <View style={styles.sliderRow}>
+          <StepButton
+            symbol="-"
+            disabled={local <= min}
+            onPress={() => commit(local - step)}
+          />
+          <Slider
+            style={styles.slider}
+            minimumValue={min}
+            maximumValue={max}
+            step={step}
+            value={local}
+            onValueChange={setLocal}
+            onSlidingComplete={commit}
+            minimumTrackTintColor={Colors.accent}
+            maximumTrackTintColor={Colors.border}
+            thumbTintColor={Colors.accent}
+          />
+          <StepButton
+            symbol="+"
+            disabled={local >= max}
+            onPress={() => commit(local + step)}
+          />
+        </View>
+      )}
+
+      {footer}
     </View>
   );
 }
@@ -263,6 +298,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
+  valueMuted: { color: Colors.textMuted, fontSize: 18 },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    marginTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: Spacing.sm,
+  },
+  toggleLabel: { color: Colors.text, fontSize: 15, fontWeight: '700' },
   sliderRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -10,8 +10,9 @@ import { CORNERS } from '@/corners';
 import { useTrainer } from '@/hooks/useTrainer';
 import { Colors, Radius, Spacing } from '@/theme';
 
-function formatTime(ms: number): string {
-  const total = Math.max(0, Math.ceil(ms / 1000));
+function formatTime(ms: number, mode: 'ceil' | 'floor' = 'ceil'): string {
+  const round = mode === 'ceil' ? Math.ceil : Math.floor;
+  const total = Math.max(0, round(ms / 1000));
   const mm = Math.floor(total / 60);
   const ss = total % 60;
   return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
@@ -22,8 +23,18 @@ export default function TrainScreen() {
   const router = useRouter();
   const cues = useCues();
   const trainer = useTrainer(cues);
-  const { status, activeIndex, remainingMs, totalMs, start, pause, resume, stop } =
-    trainer;
+  const {
+    status,
+    activeIndex,
+    remainingMs,
+    totalMs,
+    elapsedMs,
+    untimed,
+    start,
+    pause,
+    resume,
+    stop,
+  } = trainer;
 
   const started = useRef(false);
   useEffect(() => {
@@ -47,15 +58,23 @@ export default function TrainScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.clock}>{formatTime(remainingMs)}</Text>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${Math.min(100, Math.max(0, progress * 100))}%` },
-              ]}
-            />
-          </View>
+          <Text style={styles.clock}>
+            {untimed
+              ? formatTime(elapsedMs, 'floor')
+              : formatTime(remainingMs)}
+          </Text>
+          {untimed ? (
+            <Text style={styles.clockCaption}>Elapsed - no time limit</Text>
+          ) : (
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${Math.min(100, Math.max(0, progress * 100))}%` },
+                ]}
+              />
+            </View>
+          )}
         </View>
 
         <Court activeIndex={activeIndex} />
@@ -133,6 +152,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
+  },
+  clockCaption: {
+    color: Colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   progressTrack: {
     height: 6,

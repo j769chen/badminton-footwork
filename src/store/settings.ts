@@ -7,8 +7,14 @@ export type SwitchOrder = 'random' | 'sequential';
 export type Settings = {
   /** Seconds between corner switches (tenth-of-a-second precision). */
   switchIntervalSec: number;
-  /** Total session length in seconds (countdown). */
+  /** Total session length in seconds (countdown) when timed. */
   sessionDurationSec: number;
+  /**
+   * When true the session has no time limit: it counts up and only ends when
+   * the user stops it. `sessionDurationSec` is preserved so toggling the limit
+   * back on restores the previously chosen length.
+   */
+  sessionUntimed: boolean;
   /** Whether to play the audio cue on each switch. */
   audioCueEnabled: boolean;
   /** Random (avoids immediate repeat) or sequential 1->6 order. */
@@ -23,6 +29,7 @@ export const SETTINGS_LIMITS = {
 export const DEFAULT_SETTINGS: Settings = {
   switchIntervalSec: 2.5,
   sessionDurationSec: 120,
+  sessionUntimed: false,
   audioCueEnabled: true,
   order: 'random',
 };
@@ -32,6 +39,7 @@ type SettingsState = Settings & {
   markHydrated: () => void;
   setSwitchInterval: (value: number) => void;
   setSessionDuration: (value: number) => void;
+  setSessionUntimed: (value: boolean) => void;
   setAudioCueEnabled: (value: boolean) => void;
   setOrder: (value: SwitchOrder) => void;
   reset: () => void;
@@ -65,6 +73,7 @@ export const useSettings = create<SettingsState>()(
             SETTINGS_LIMITS.sessionDurationSec.max,
           ),
         }),
+      setSessionUntimed: (value) => set({ sessionUntimed: value }),
       setAudioCueEnabled: (value) => set({ audioCueEnabled: value }),
       setOrder: (value) => set({ order: value }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
@@ -76,9 +85,16 @@ export const useSettings = create<SettingsState>()(
       partialize: ({
         switchIntervalSec,
         sessionDurationSec,
+        sessionUntimed,
         audioCueEnabled,
         order,
-      }) => ({ switchIntervalSec, sessionDurationSec, audioCueEnabled, order }),
+      }) => ({
+        switchIntervalSec,
+        sessionDurationSec,
+        sessionUntimed,
+        audioCueEnabled,
+        order,
+      }),
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Record<string, unknown>;
         // v0 stored session length in minutes as `sessionDurationMin`.

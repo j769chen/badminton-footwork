@@ -12,6 +12,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
+  const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
   const order = useSettings((s) => s.order);
   const hasHydrated = useSettings((s) => s.hasHydrated);
@@ -44,7 +45,9 @@ export default function HomeScreen() {
           />
           <SummaryRow
             label="Session length"
-            value={formatDurationLabel(sessionDurationSec)}
+            value={
+              sessionUntimed ? 'No limit' : formatDurationLabel(sessionDurationSec)
+            }
           />
           <SummaryRow
             label="Order"
