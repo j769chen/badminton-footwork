@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -6,6 +6,7 @@ import { CORNERS } from '@/corners';
 import { formatDurationLabel, formatInterval } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
+import React from 'react';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -56,30 +57,33 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.actions}>
-          <Pressable
-            disabled={!hasHydrated}
-            style={({ pressed }) => [
-              styles.startButton,
-              !hasHydrated && styles.startButtonDisabled,
-              pressed && styles.pressed,
-            ]}
-            onPress={() => router.push('/train')}
-          >
-            <Text style={styles.startLabel}>
-              {hasHydrated ? 'Start Session' : 'Loading...'}
-            </Text>
-          </Pressable>
-
-          <Link href="/settings" asChild>
+          <View style={styles.buttonRow}>
             <Pressable
+              disabled={!hasHydrated}
               style={({ pressed }) => [
-                styles.secondaryButton,
+                styles.startButton,
+                !hasHydrated && styles.startButtonDisabled,
                 pressed && styles.pressed,
               ]}
+              onPress={() => router.push('/train')}
             >
-              <Text style={styles.secondaryLabel}>Settings</Text>
+              <Text style={styles.startLabel}>
+                {hasHydrated ? 'Start Session' : 'Loading...'}
+              </Text>
             </Pressable>
-          </Link>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+              style={({ pressed }) => [
+                styles.settingsButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => router.push('/settings')}
+            >
+              <Text style={styles.settingsLabel}>Settings</Text>
+            </Pressable>
+          </View>
 
           <Text style={styles.musicHint}>
             Tip: start your music in Spotify or SoundCloud first - it keeps
@@ -160,23 +164,32 @@ const styles = StyleSheet.create({
   summaryLabel: { color: Colors.textMuted, fontSize: 14 },
   summaryValue: { color: Colors.text, fontSize: 15, fontWeight: '600' },
   actions: { marginTop: 'auto', gap: Spacing.sm },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: Spacing.sm,
+  },
   startButton: {
+    flex: 1,
     backgroundColor: Colors.accent,
     borderRadius: Radius.pill,
     paddingVertical: Spacing.md,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   startButtonDisabled: { opacity: 0.5 },
   startLabel: { color: Colors.background, fontSize: 18, fontWeight: '800' },
-  secondaryButton: {
+  settingsButton: {
+    flex: 1,
     backgroundColor: Colors.surfaceAlt,
     borderRadius: Radius.pill,
     paddingVertical: Spacing.md,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  secondaryLabel: { color: Colors.text, fontSize: 16, fontWeight: '600' },
+  settingsLabel: { color: Colors.text, fontSize: 18, fontWeight: '700' },
   pressed: { opacity: 0.8 },
   musicHint: {
     color: Colors.textMuted,

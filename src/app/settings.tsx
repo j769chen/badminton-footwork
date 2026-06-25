@@ -17,6 +17,7 @@ import {
   type SwitchOrder,
 } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
+import React from 'react';
 
 export default function SettingsScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);

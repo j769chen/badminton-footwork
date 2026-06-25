@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import { configureAudioSession } from '@/audio';
 import { Colors } from '@/theme';
+import React from 'react';
 
 // Anchor every route to the home screen so deep links / page refreshes (e.g.
 // landing directly on /settings or /train on web) still render a back button
