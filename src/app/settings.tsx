@@ -70,8 +70,8 @@ export default function SettingsScreen() {
             <View style={styles.rowText}>
               <Text style={styles.label}>Audio cue</Text>
               <Text style={styles.help}>
-                Plays a short beep that briefly ducks your music. Turn off for a
-                visual-only drill that never touches other apps.
+                Plays a short beep. Turn off for a
+                visual-only drill
               </Text>
             </View>
             <Switch

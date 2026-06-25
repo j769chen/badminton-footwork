@@ -51,7 +51,7 @@ export default function HomeScreen() {
           />
           <SummaryRow
             label="Audio cue"
-            value={audioCueEnabled ? 'On (ducks music)' : 'Off (visual only)'}
+            value={audioCueEnabled ? 'On' : 'Off'}
           />
         </View>
 

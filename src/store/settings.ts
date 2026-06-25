@@ -17,12 +17,12 @@ export type Settings = {
 
 export const SETTINGS_LIMITS = {
   switchIntervalSec: { min: 0.5, max: 10, step: 0.1 },
-  sessionDurationSec: { min: 30, max: 3600, step: 1 },
+  sessionDurationSec: { min: 30, max: 900, step: 1 },
 } as const;
 
 export const DEFAULT_SETTINGS: Settings = {
-  switchIntervalSec: 3,
-  sessionDurationSec: 600,
+  switchIntervalSec: 2.5,
+  sessionDurationSec: 120,
   audioCueEnabled: true,
   order: 'random',
 };
