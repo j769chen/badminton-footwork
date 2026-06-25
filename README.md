@@ -1,56 +1,97 @@
-# Welcome to your Expo app 👋
+# Badminton Footwork Trainer
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A cross-platform (iOS + Android) mobile app that drills badminton footwork. The
+six corners of the court are numbered 1-6; one lights up at a time on a
+configurable interval. React to the highlight, move to that corner, and recover
+to the centre. A short audio cue accompanies each switch and **ducks** any music
+playing from Spotify, SoundCloud, Apple Music, etc. (briefly lowering it) rather
+than stopping it.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **6 numbered corners** drawn on a stylised court (front / mid / rear, left /
+  right). The active corner pulses and glows.
+- **Music-friendly audio cues.** The audio session uses `duckOthers`, so your
+  music keeps playing and only dips for each beep. The cue can be turned off
+  entirely for a visual-only drill.
+- **Session countdown.** The workout runs for a set number of minutes, then
+  stops with a "session complete" cue.
+- **Configurable settings** (persisted between launches):
+  - Time between switches (1-10s)
+  - Session length (1-60 min)
+  - Switch order: random (no immediate repeats) or sequential
+  - Audio cue on/off
+- **Pause / resume / stop** controls and a keep-awake screen during sessions.
 
-   ```bash
-   npm install
-   ```
+## The six corners
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+        1 ── Front ── 2
+        |             |
+   3 ── Mid ──────── Mid ── 4
+        |             |
+        5 ── Rear ── 6
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Tech stack
 
-### Other setup steps
+- [Expo](https://expo.dev/) (SDK 54) + React Native + TypeScript
+- [Expo Router](https://docs.expo.dev/router/introduction/) for navigation
+- [`expo-audio`](https://docs.expo.dev/versions/latest/sdk/audio/) for the cue and
+  audio-session ducking
+- [`expo-keep-awake`](https://docs.expo.dev/versions/latest/sdk/keep-awake/) to
+  keep the screen on during a session
+- [Zustand](https://github.com/pmndrs/zustand) + AsyncStorage for persisted
+  settings
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Getting started
 
-## Learn more
+```bash
+npm install
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Then press `i` for the iOS simulator, `a` for an Android emulator, or scan the QR
+code with the Expo Go / a dev client app on your phone.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+> Background audio (`UIBackgroundModes: ["audio"]` on iOS) and the `expo-audio`
+> config plugin require a native build, so use a
+> [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+> (`npx expo run:ios` / `npx expo run:android`) rather than Expo Go for the full
+> audio behaviour.
 
-## Join the community
+## How to use
 
-Join our community of developers creating universal apps.
+1. Start your music in Spotify / SoundCloud / Apple Music first.
+2. Open the app, adjust settings if needed, and tap **Start Session**.
+3. Move to whichever corner is highlighted, then recover to the centre. Repeat
+   until the countdown ends.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Project structure
+
+```
+src/
+  app/
+    _layout.tsx     Stack navigator + audio-session setup
+    index.tsx       Home (summary + Start)
+    train.tsx       Active session (court, countdown, controls)
+    settings.tsx    Configurable settings
+  components/
+    Court.tsx       Court diagram + corner layout
+    Corner.tsx      A single numbered, animated target
+  hooks/
+    useTrainer.ts   Drift-free timing engine (switches + countdown)
+  store/
+    settings.ts     Persisted settings (Zustand + AsyncStorage)
+  audio.ts          Audio session config + cue triggers
+  corners.ts        Corner definitions + next-corner selection
+  theme.ts          Design tokens
+assets/
+  sounds/           beep.wav, complete.wav (generated tones)
+```
+
+## Notes
+
+This app does not integrate the Spotify/SoundCloud SDKs or control playback. It
+only ensures their background audio is not interrupted - you control music from
+the music app, lock screen, or Control Centre.

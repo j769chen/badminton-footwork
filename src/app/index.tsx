@@ -1,98 +1,187 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { CORNERS } from '@/corners';
+import { formatDurationLabel, formatInterval } from '@/format';
+import { useSettings } from '@/store/settings';
+import { Colors, Radius, Spacing } from '@/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+export default function HomeScreen() {
+  const router = useRouter();
+  const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
+  const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
+  const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
+  const order = useSettings((s) => s.order);
+  const hasHydrated = useSettings((s) => s.hasHydrated);
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <View style={styles.container}>
+        <View style={styles.hero}>
+          <Text style={styles.title}>Badminton{'\n'}Footwork Trainer</Text>
+          <Text style={styles.subtitle}>
+            React to the highlighted corner, move, and recover to the centre.
+          </Text>
+        </View>
+
+        <View style={styles.previewGrid}>
+          {CORNERS.map((corner) => (
+            <View key={corner.number} style={styles.previewItem}>
+              <View style={styles.previewDot}>
+                <Text style={styles.previewNumber}>{corner.number}</Text>
+              </View>
+              <Text style={styles.previewLabel}>{corner.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.summary}>
+          <SummaryRow
+            label="Switch every"
+            value={formatInterval(switchIntervalSec)}
+          />
+          <SummaryRow
+            label="Session length"
+            value={formatDurationLabel(sessionDurationSec)}
+          />
+          <SummaryRow
+            label="Order"
+            value={order === 'random' ? 'Random' : 'Sequential'}
+          />
+          <SummaryRow
+            label="Audio cue"
+            value={audioCueEnabled ? 'On (ducks music)' : 'Off (visual only)'}
+          />
+        </View>
+
+        <View style={styles.actions}>
+          <Pressable
+            disabled={!hasHydrated}
+            style={({ pressed }) => [
+              styles.startButton,
+              !hasHydrated && styles.startButtonDisabled,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.push('/train')}
+          >
+            <Text style={styles.startLabel}>
+              {hasHydrated ? 'Start Session' : 'Loading...'}
+            </Text>
+          </Pressable>
+
+          <Link href="/settings" asChild>
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.secondaryLabel}>Settings</Text>
+            </Pressable>
+          </Link>
+
+          <Text style={styles.musicHint}>
+            Tip: start your music in Spotify or SoundCloud first - it keeps
+            playing and only briefly dips for each cue.
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
-export default function HomeScreen() {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue}>{value}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.background },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.lg,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
+  hero: { gap: Spacing.sm },
   title: {
+    color: Colors.text,
+    fontSize: 34,
+    fontWeight: '800',
+    lineHeight: 38,
+  },
+  subtitle: {
+    color: Colors.textMuted,
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  previewGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: Spacing.md,
+  },
+  previewItem: {
+    width: '31%',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  previewDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewNumber: { color: Colors.text, fontWeight: '700', fontSize: 16 },
+  previewLabel: { color: Colors.textMuted, fontSize: 12 },
+  summary: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryLabel: { color: Colors.textMuted, fontSize: 14 },
+  summaryValue: { color: Colors.text, fontSize: 15, fontWeight: '600' },
+  actions: { marginTop: 'auto', gap: Spacing.sm },
+  startButton: {
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  startButtonDisabled: { opacity: 0.5 },
+  startLabel: { color: Colors.background, fontSize: 18, fontWeight: '800' },
+  secondaryButton: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  secondaryLabel: { color: Colors.text, fontSize: 16, fontWeight: '600' },
+  pressed: { opacity: 0.8 },
+  musicHint: {
+    color: Colors.textMuted,
+    fontSize: 12,
     textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    marginTop: Spacing.xs,
   },
 });
