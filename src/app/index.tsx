@@ -84,11 +84,6 @@ export default function HomeScreen() {
               <Text style={styles.settingsLabel}>Settings</Text>
             </Pressable>
           </View>
-
-          <Text style={styles.musicHint}>
-            Tip: start your music in Spotify or SoundCloud first - it keeps
-            playing and only briefly dips for each cue.
-          </Text>
         </View>
       </View>
     </SafeAreaView>
