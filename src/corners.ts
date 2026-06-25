@@ -10,16 +10,26 @@ export type Corner = {
 };
 
 /**
- * The 6 footwork targets. Front = net side (top), Rear = baseline (bottom).
- * The player recovers to the centre between every movement.
+ * The 6 footwork targets, arranged as two vertical columns sitting on the
+ * court's left and right sidelines. Front = net side (top), Rear = baseline
+ * (bottom). The player recovers to the centre between every movement.
+ *
+ * Left column (1, 3, 5) shares an x; right column (2, 4, 6) shares an x, so the
+ * numbers line up vertically along each border.
  */
+const LEFT_X = 0.12;
+const RIGHT_X = 0.88;
+const TOP_Y = 0.14;
+const MID_Y = 0.5;
+const BOTTOM_Y = 0.86;
+
 export const CORNERS: readonly Corner[] = [
-  { number: 1, label: 'Front Left', x: 0.24, y: 0.13 },
-  { number: 2, label: 'Front Right', x: 0.76, y: 0.13 },
-  { number: 3, label: 'Mid Left', x: 0.13, y: 0.5 },
-  { number: 4, label: 'Mid Right', x: 0.87, y: 0.5 },
-  { number: 5, label: 'Rear Left', x: 0.24, y: 0.87 },
-  { number: 6, label: 'Rear Right', x: 0.76, y: 0.87 },
+  { number: 1, label: 'Front Left', x: LEFT_X, y: TOP_Y },
+  { number: 2, label: 'Front Right', x: RIGHT_X, y: TOP_Y },
+  { number: 3, label: 'Mid Left', x: LEFT_X, y: MID_Y },
+  { number: 4, label: 'Mid Right', x: RIGHT_X, y: MID_Y },
+  { number: 5, label: 'Rear Left', x: LEFT_X, y: BOTTOM_Y },
+  { number: 6, label: 'Rear Right', x: RIGHT_X, y: BOTTOM_Y },
 ];
 
 export const CORNER_COUNT = CORNERS.length;

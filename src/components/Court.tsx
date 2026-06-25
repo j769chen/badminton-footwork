@@ -1,24 +1,37 @@
+import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { CORNERS } from '@/corners';
 import { Colors } from '@/theme';
 import { Corner } from './Corner';
 
+// Native court markings come baked into the image, so we just overlay the
+// numbered targets and the centre recovery marker on top of it.
+const courtImage = require('../../assets/images/court.png');
+
+// Keep the container's aspect ratio identical to the source image (719x800)
+// so the painted lines never stretch.
+const COURT_ASPECT_RATIO = 719 / 800;
+
 type CourtProps = {
   activeIndex: number | null;
 };
 
 /**
- * A stylised badminton court with the 6 numbered footwork targets and a
- * centre marker the player returns to between movements.
+ * A badminton court (rendered from the court artwork) with the 6 numbered
+ * footwork targets and a centre marker the player returns to between movements.
  */
 export function Court({ activeIndex }: CourtProps) {
   return (
     <View style={styles.outer}>
       <View style={styles.court}>
-        {/* Court markings */}
-        <View style={styles.netLine} />
-        <View style={styles.centreLine} />
+        <Image
+          source={courtImage}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          accessibilityIgnoresInvertColors
+        />
+
         <View style={styles.centreMark} />
 
         {CORNERS.map((corner, index) => (
@@ -42,31 +55,12 @@ const styles = StyleSheet.create({
   },
   court: {
     width: '100%',
-    aspectRatio: 0.72,
+    aspectRatio: COURT_ASPECT_RATIO,
     backgroundColor: Colors.court,
     borderRadius: 16,
     borderWidth: 3,
     borderColor: Colors.courtLine,
     overflow: 'hidden',
-  },
-  netLine: {
-    position: 'absolute',
-    top: '28%',
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: Colors.courtLine,
-    opacity: 0.85,
-  },
-  centreLine: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '50%',
-    width: 2,
-    marginLeft: -1,
-    backgroundColor: Colors.courtLine,
-    opacity: 0.5,
   },
   centreMark: {
     position: 'absolute',
