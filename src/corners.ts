@@ -34,6 +34,29 @@ export const CORNERS: readonly Corner[] = [
 
 export const CORNER_COUNT = CORNERS.length;
 
+const distanceBetween = (a: Corner, b: Corner) =>
+  Math.hypot(a.x - b.x, a.y - b.y);
+
+/** Largest distance between any two targets, used to normalise travel to 0..1. */
+export const MAX_CORNER_DISTANCE = CORNERS.reduce((max, a) => {
+  for (const b of CORNERS) max = Math.max(max, distanceBetween(a, b));
+  return max;
+}, 0);
+
+/**
+ * How far the player travels from the previous target to the next one,
+ * normalised to 0..1 (0 = no previous target / no move, 1 = the longest
+ * possible diagonal). Deterministic: depends only on the two positions.
+ */
+export function normalizedTravel(
+  prevIndex: number | null,
+  nextIndex: number,
+): number {
+  if (prevIndex === null || prevIndex === nextIndex) return 0;
+  return distanceBetween(CORNERS[prevIndex], CORNERS[nextIndex]) /
+    MAX_CORNER_DISTANCE;
+}
+
 /**
  * Pick the next active corner index given the current one.
  * - `random`: uniform over the other corners (never repeats immediately).

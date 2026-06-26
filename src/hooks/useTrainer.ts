@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Cues } from '@/audio';
-import { pickNext } from '@/corners';
+import { normalizedTravel, pickNext } from '@/corners';
 import { useSettings } from '@/store/settings';
 
 export type TrainerStatus = 'idle' | 'running' | 'paused' | 'complete';
 
 const TICK_MS = 200;
+
+/**
+ * Extra dwell time granted to the longest possible movement, as a fraction of
+ * the configured switch interval. A target sits lit for
+ * `interval * (1 + DISTANCE_TIME_FACTOR * normalizedTravel)`, so the configured
+ * interval is the baseline (shortest move) and farther targets get a little
+ * more time to reach. Deterministic - depends only on the distance.
+ */
+const DISTANCE_TIME_FACTOR = 0.15;
 
 type Trainer = {
   status: TrainerStatus;
@@ -56,13 +65,19 @@ export function useTrainer(cues: Cues): Trainer {
     }
   }, []);
 
+  /** Switch to the next corner and return how long it should stay lit (ms). */
   const advanceCorner = useCallback(() => {
-    const next = pickNext(activeRef.current, useSettings.getState().order);
+    const prev = activeRef.current;
+    const next = pickNext(prev, useSettings.getState().order);
     activeRef.current = next;
     setActiveIndex(next);
     if (useSettings.getState().audioCueEnabled) {
       cues.playSwitch();
     }
+    return (
+      intervalMsRef.current *
+      (1 + DISTANCE_TIME_FACTOR * normalizedTravel(prev, next))
+    );
   }, [cues]);
 
   const finish = useCallback(() => {
@@ -88,8 +103,8 @@ export function useTrainer(cues: Cues): Trainer {
       setRemainingMs(remaining);
     }
     if (now >= nextSwitchAtRef.current) {
-      advanceCorner();
-      nextSwitchAtRef.current = now + intervalMsRef.current;
+      const holdMs = advanceCorner();
+      nextSwitchAtRef.current = now + holdMs;
     }
   }, [advanceCorner, finish]);
 
@@ -130,7 +145,8 @@ export function useTrainer(cues: Cues): Trainer {
       setRemainingMs(sessionMs);
     }
 
-    // Immediately show (and cue) the first corner.
+    // Immediately show (and cue) the first corner. With no previous target the
+    // travel distance is zero, so it holds for exactly the base interval.
     const first = pickNext(null, useSettings.getState().order);
     activeRef.current = first;
     setActiveIndex(first);
