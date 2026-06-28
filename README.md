@@ -23,16 +23,6 @@ than stopping it.
   - Audio cue on/off
 - **Pause / resume / stop** controls and a keep-awake screen during sessions.
 
-## The six corners
-
-```
-        1 ── Front ── 2
-        |             |
-   3 ── Mid ──────── Mid ── 4
-        |             |
-        5 ── Rear ── 6
-```
-
 ## Tech stack
 
 - [Expo](https://expo.dev/) (SDK 54) + React Native + TypeScript
