@@ -33,8 +33,6 @@ export const CORNERS: readonly Corner[] = [
   { number: 6, label: 'Rear Right', x: RIGHT_X, y: BOTTOM_Y },
 ];
 
-export const CORNER_COUNT = CORNERS.length;
-
 export const ALL_CORNER_NUMBERS: readonly number[] = CORNERS.map(
   (c) => c.number,
 );
@@ -68,13 +66,21 @@ export function normalizedTravel(prev: Corner | null, next: Corner): number {
 }
 
 /**
- * The corners currently in play, in board order.
- *
- * `enabled` holds user-facing corner numbers; unknown numbers are ignored, so
- * the result is always a subset of `CORNERS`.
+ * A selection (`enabled`) holds user-facing corner numbers, so these two are
+ * the only places that know membership is keyed by `corner.number`. Screens ask
+ * via one or the other rather than reaching for the numbers themselves.
+ */
+export const isCornerEnabled = (
+  enabled: readonly number[],
+  corner: Corner,
+): boolean => enabled.includes(corner.number);
+
+/**
+ * The corners currently in play, in board order. Unknown numbers are ignored,
+ * so the result is always a subset of `CORNERS`.
  */
 export function enabledCornerList(enabled: readonly number[]): Corner[] {
-  return CORNERS.filter((corner) => enabled.includes(corner.number));
+  return CORNERS.filter((corner) => isCornerEnabled(enabled, corner));
 }
 
 /**

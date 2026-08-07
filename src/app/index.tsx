@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CORNER_COUNT, CORNERS } from '@/corners';
+import { CORNERS, isCornerEnabled } from '@/corners';
 import { formatDurationLabel, formatInterval } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
@@ -32,7 +32,7 @@ export default function HomeScreen() {
           {CORNERS.map((corner) => {
             // Deselected corners stay in the grid, dimmed, so the layout holds
             // and it is obvious which ones sit out.
-            const enabled = enabledCorners.includes(corner.number);
+            const enabled = isCornerEnabled(enabledCorners, corner);
             return (
               <View
                 key={corner.number}
@@ -59,10 +59,6 @@ export default function HomeScreen() {
             value={
               sessionUntimed ? 'No limit' : formatDurationLabel(sessionDurationSec)
             }
-          />
-          <SummaryRow
-            label="Corners"
-            value={`${enabledCorners.length} of ${CORNER_COUNT}`}
           />
           <SummaryRow
             label="Order"

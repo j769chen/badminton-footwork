@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   CORNERS,
+  isCornerEnabled,
   MIN_ENABLED_CORNERS,
   type SwitchOrder,
 } from '@/corners';
@@ -90,7 +91,7 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.cornerList}>
             {CORNERS.map((corner) => {
-              const checked = enabledCorners.includes(corner.number);
+              const checked = isCornerEnabled(enabledCorners, corner);
               const locked =
                 checked && enabledCorners.length <= MIN_ENABLED_CORNERS;
               return (

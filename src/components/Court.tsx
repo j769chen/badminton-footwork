@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { CORNERS, type Corner as CornerModel } from '@/corners';
+import { enabledCornerList, type Corner as CornerModel } from '@/corners';
 import { useSettings } from '@/store/settings';
 import { Colors } from '@/theme';
 import { Corner } from './Corner';
@@ -38,17 +38,15 @@ export function Court({ activeCorner }: CourtProps) {
 
         <View style={styles.centreMark} />
 
-        {CORNERS.map((corner) =>
-          enabledCorners.includes(corner.number) ? (
-            <Corner
-              key={corner.number}
-              number={corner.number}
-              x={corner.x}
-              y={corner.y}
-              active={corner === activeCorner}
-            />
-          ) : null,
-        )}
+        {enabledCornerList(enabledCorners).map((corner) => (
+          <Corner
+            key={corner.number}
+            number={corner.number}
+            x={corner.x}
+            y={corner.y}
+            active={corner === activeCorner}
+          />
+        ))}
       </View>
     </View>
   );
