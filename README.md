@@ -11,9 +11,11 @@ than stopping it.
 
 - **Up to 6 numbered corners** drawn on a stylised court (front / mid / rear,
   left / right). The active corner pulses and glows.
-- **Pick the corners you want to drill.** Deselect any you are not working on
-  and only the rest are called out - a rear-court-only drill, one diagonal, or
-  a single corner repeated. Deselected corners are hidden from the court.
+- **Pick the corners you want to drill.** All six are in play by default;
+  deselect any you are not working on and only the rest are called out - a
+  rear-court-only drill, one diagonal, or a single corner repeated. Deselected
+  corners are hidden from the court, and both switch orders respect the
+  selection.
 - **Music-friendly audio cues.** The audio session uses `duckOthers`, so your
   music keeps playing and only dips for each beep. The cue can be turned off
   entirely for a visual-only drill.
@@ -26,22 +28,6 @@ than stopping it.
   - Switch order: random (no immediate repeats) or sequential
   - Audio cue on/off
 - **Pause / resume / stop** controls and a keep-awake screen during sessions.
-
-## The six corners
-
-```
-        1 ── Front ── 2
-        |             |
-   3 ── Mid ──────── Mid ── 4
-        |             |
-        5 ── Rear ── 6
-```
-
-All six are in play by default. Settings has a checkbox per corner, and both
-switch orders respect the selection: sequential walks the chosen corners in
-board order and wraps, random picks uniformly among the others. Selecting a
-single corner is allowed - it is still a rep, since the player moves out to it
-and recovers to the centre on every cue.
 
 ## Tech stack
 
