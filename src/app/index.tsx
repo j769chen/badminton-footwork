@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CORNERS } from '@/corners';
+import { CORNER_COUNT, CORNERS } from '@/corners';
 import { formatDurationLabel, formatInterval } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
@@ -62,7 +62,7 @@ export default function HomeScreen() {
           />
           <SummaryRow
             label="Corners"
-            value={`${enabledCorners.length} of ${CORNERS.length}`}
+            value={`${enabledCorners.length} of ${CORNER_COUNT}`}
           />
           <SummaryRow
             label="Order"

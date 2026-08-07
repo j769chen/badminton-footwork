@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCues } from '@/audio';
 import { Court } from '@/components/Court';
-import { CORNERS } from '@/corners';
 import { useTrainer } from '@/hooks/useTrainer';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -25,7 +24,7 @@ export default function TrainScreen() {
   const trainer = useTrainer(cues);
   const {
     status,
-    activeIndex,
+    activeCorner,
     remainingMs,
     totalMs,
     elapsedMs,
@@ -49,8 +48,6 @@ export default function TrainScreen() {
     router.back();
   };
 
-  const activeCorner =
-    activeIndex !== null ? CORNERS[activeIndex] : null;
   const progress = totalMs > 0 ? 1 - remainingMs / totalMs : 0;
   const isComplete = status === 'complete';
 
@@ -77,7 +74,7 @@ export default function TrainScreen() {
           )}
         </View>
 
-        <Court activeIndex={activeIndex} />
+        <Court activeCorner={activeCorner} />
 
         <View style={styles.callout}>
           {isComplete ? (

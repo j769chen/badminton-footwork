@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { CORNERS } from '@/corners';
+import { CORNERS, type Corner as CornerModel } from '@/corners';
 import { useSettings } from '@/store/settings';
 import { Colors } from '@/theme';
 import { Corner } from './Corner';
@@ -15,7 +15,7 @@ const courtImage = require('../../assets/images/court.png');
 const COURT_ASPECT_RATIO = 719 / 800;
 
 type CourtProps = {
-  activeIndex: number | null;
+  activeCorner: CornerModel | null;
 };
 
 /**
@@ -23,7 +23,7 @@ type CourtProps = {
  * footwork targets the user has enabled, plus a centre marker the player
  * returns to between movements.
  */
-export function Court({ activeIndex }: CourtProps) {
+export function Court({ activeCorner }: CourtProps) {
   const enabledCorners = useSettings((s) => s.enabledCorners);
 
   return (
@@ -38,14 +38,14 @@ export function Court({ activeIndex }: CourtProps) {
 
         <View style={styles.centreMark} />
 
-        {CORNERS.map((corner, index) =>
+        {CORNERS.map((corner) =>
           enabledCorners.includes(corner.number) ? (
             <Corner
               key={corner.number}
               number={corner.number}
               x={corner.x}
               y={corner.y}
-              active={index === activeIndex}
+              active={corner === activeCorner}
             />
           ) : null,
         )}

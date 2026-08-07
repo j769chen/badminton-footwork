@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Cues } from '@/audio';
-import { normalizedTravel, pickNext, toCornerIndices } from '@/corners';
+import { normalizedTravel, pickNext, type Corner } from '@/corners';
 import { useSettings } from '@/store/settings';
 
 export type TrainerStatus = 'idle' | 'running' | 'paused' | 'complete';
@@ -19,7 +19,8 @@ const DISTANCE_TIME_FACTOR = 0.15;
 
 type Trainer = {
   status: TrainerStatus;
-  activeIndex: number | null;
+  /** The target currently lit, or null when nothing is in play. */
+  activeCorner: Corner | null;
   remainingMs: number;
   totalMs: number;
   /** Time elapsed since the session started (excludes paused time). */
@@ -39,7 +40,7 @@ type Trainer = {
  */
 export function useTrainer(cues: Cues): Trainer {
   const [status, setStatus] = useState<TrainerStatus>('idle');
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [activeCorner, setActiveCorner] = useState<Corner | null>(null);
   const [remainingMs, setRemainingMs] = useState(0);
   const [totalMs, setTotalMs] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -50,7 +51,7 @@ export function useTrainer(cues: Cues): Trainer {
   const endAtRef = useRef(0);
   const nextSwitchAtRef = useRef(0);
   const intervalMsRef = useRef(0);
-  const activeRef = useRef<number | null>(null);
+  const activeRef = useRef<Corner | null>(null);
   const untimedRef = useRef(false);
   // Time remaining until the next switch, captured while paused.
   const pausedSwitchRemainingRef = useRef(0);
@@ -69,9 +70,9 @@ export function useTrainer(cues: Cues): Trainer {
   const advanceCorner = useCallback(() => {
     const prev = activeRef.current;
     const { order, enabledCorners } = useSettings.getState();
-    const next = pickNext(prev, order, toCornerIndices(enabledCorners));
+    const next = pickNext(prev, order, enabledCorners);
     activeRef.current = next;
-    setActiveIndex(next);
+    setActiveCorner(next);
     if (useSettings.getState().audioCueEnabled) {
       cues.playSwitch();
     }
@@ -84,7 +85,7 @@ export function useTrainer(cues: Cues): Trainer {
   const finish = useCallback(() => {
     clearTick();
     setRemainingMs(0);
-    setActiveIndex(null);
+    setActiveCorner(null);
     activeRef.current = null;
     setStatus('complete');
     if (useSettings.getState().audioCueEnabled) {
@@ -150,9 +151,9 @@ export function useTrainer(cues: Cues): Trainer {
 
     // Immediately show (and cue) the first corner. With no previous target the
     // travel distance is zero, so it holds for exactly the base interval.
-    const first = pickNext(null, order, toCornerIndices(enabledCorners));
+    const first = pickNext(null, order, enabledCorners);
     activeRef.current = first;
-    setActiveIndex(first);
+    setActiveCorner(first);
     if (audioCueEnabled) cues.playSwitch();
 
     setStatus('running');
@@ -190,7 +191,7 @@ export function useTrainer(cues: Cues): Trainer {
   const stop = useCallback(() => {
     clearTick();
     setStatus('idle');
-    setActiveIndex(null);
+    setActiveCorner(null);
     activeRef.current = null;
     setRemainingMs(0);
     setTotalMs(0);
@@ -202,7 +203,7 @@ export function useTrainer(cues: Cues): Trainer {
 
   return {
     status,
-    activeIndex,
+    activeCorner,
     remainingMs,
     totalMs,
     elapsedMs,

@@ -2,9 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { ALL_CORNER_NUMBERS, MIN_ENABLED_CORNERS } from '@/corners';
-
-export type SwitchOrder = 'random' | 'sequential';
+import {
+  ALL_CORNER_NUMBERS,
+  MIN_ENABLED_CORNERS,
+  type SwitchOrder,
+} from '@/corners';
 
 export type Settings = {
   /** Seconds between corner switches (tenth-of-a-second precision). */
@@ -22,10 +24,12 @@ export type Settings = {
   /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
   /**
-   * Corner numbers in play, as shown on the court. Always holds at least
-   * `MIN_ENABLED_CORNERS` entries and is kept in ascending order.
+   * Corner numbers in play, as shown on the court: always at least
+   * `MIN_ENABLED_CORNERS` real corners, deduped and in board order. Readonly so
+   * the array can be shared with `DEFAULT_SETTINGS` without risk of in-place
+   * edits leaking into the defaults.
    */
-  enabledCorners: number[];
+  enabledCorners: readonly number[];
 };
 
 export const SETTINGS_LIMITS = {
@@ -39,8 +43,23 @@ export const DEFAULT_SETTINGS: Settings = {
   sessionUntimed: false,
   audioCueEnabled: true,
   order: 'random',
-  enabledCorners: [...ALL_CORNER_NUMBERS],
+  enabledCorners: ALL_CORNER_NUMBERS,
 };
+
+/**
+ * Coerce a persisted selection back into the invariant `Settings.enabledCorners`
+ * promises: real corner numbers only, deduped, in board order, never empty.
+ * Filtering `ALL_CORNER_NUMBERS` delivers all four properties in one pass.
+ *
+ * Anything unusable - a missing field from an older build, a hand-edited or
+ * corrupt value, a selection naming only corners that no longer exist - falls
+ * back to the full court, which is what those users last saw.
+ */
+export function normalizeEnabledCorners(value: unknown): readonly number[] {
+  if (!Array.isArray(value)) return ALL_CORNER_NUMBERS;
+  const kept = ALL_CORNER_NUMBERS.filter((number) => value.includes(number));
+  return kept.length >= MIN_ENABLED_CORNERS ? kept : ALL_CORNER_NUMBERS;
+}
 
 type SettingsState = Settings & {
   hasHydrated: boolean;
@@ -92,10 +111,13 @@ export const useSettings = create<SettingsState>()(
           if (on && state.enabledCorners.length <= MIN_ENABLED_CORNERS) {
             return state;
           }
-          const next = on
-            ? state.enabledCorners.filter((n) => n !== number)
-            : [...state.enabledCorners, number].sort((a, b) => a - b);
-          return { enabledCorners: next };
+          return {
+            enabledCorners: on
+              ? state.enabledCorners.filter((n) => n !== number)
+              : ALL_CORNER_NUMBERS.filter(
+                  (n) => n === number || state.enabledCorners.includes(n),
+                ),
+          };
         }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
@@ -125,11 +147,20 @@ export const useSettings = create<SettingsState>()(
           state.sessionDurationSec = state.sessionDurationMin * 60;
           delete state.sessionDurationMin;
         }
-        // v1 had no corner selection: every corner was always in play.
-        if (version < 2) {
-          state.enabledCorners = [...ALL_CORNER_NUMBERS];
-        }
+        // v2 added `enabledCorners`. v1 payloads simply lack the field, which
+        // `merge` below normalises to the full court, so there is nothing to
+        // migrate here.
         return state as Partial<Settings>;
+      },
+      // Every rehydration passes through here, so this is the one place the
+      // corner-selection invariant has to hold - which is why `pickNext` can
+      // trust its pool instead of guarding an empty one.
+      merge: (persisted, current) => {
+        const merged = { ...current, ...(persisted as Partial<Settings>) };
+        return {
+          ...merged,
+          enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
+        };
       },
       onRehydrateStorage: () => (state) => {
         state?.markHydrated();

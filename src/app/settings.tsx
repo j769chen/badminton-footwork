@@ -10,13 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CORNERS, MIN_ENABLED_CORNERS } from '@/corners';
-import { formatClock, formatInterval } from '@/format';
 import {
-  SETTINGS_LIMITS,
-  useSettings,
+  CORNERS,
+  MIN_ENABLED_CORNERS,
   type SwitchOrder,
-} from '@/store/settings';
+} from '@/corners';
+import { formatClock, formatInterval } from '@/format';
+import { SETTINGS_LIMITS, useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 import React from 'react';
 
