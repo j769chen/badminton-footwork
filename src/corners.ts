@@ -34,6 +34,29 @@ export const CORNERS: readonly Corner[] = [
 
 export const CORNER_COUNT = CORNERS.length;
 
+export const ALL_CORNER_NUMBERS: readonly number[] = CORNERS.map(
+  (c) => c.number,
+);
+
+/**
+ * At least one corner must stay in play. A single corner is a valid drill: the
+ * player still moves out to it and recovers to the centre on every cue.
+ */
+export const MIN_ENABLED_CORNERS = 1;
+
+/**
+ * Map the user-facing corner numbers stored in settings to positions in
+ * `CORNERS`, in board order. Unknown numbers are ignored, so a stale persisted
+ * selection can never produce an out-of-range index.
+ */
+export function toCornerIndices(numbers: readonly number[]): number[] {
+  const wanted = new Set(numbers);
+  return CORNERS.reduce<number[]>((acc, corner, index) => {
+    if (wanted.has(corner.number)) acc.push(index);
+    return acc;
+  }, []);
+}
+
 const distanceBetween = (a: Corner, b: Corner) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -58,24 +81,34 @@ export function normalizedTravel(
 }
 
 /**
- * Pick the next active corner index given the current one.
- * - `random`: uniform over the other corners (never repeats immediately).
- * - `sequential`: walks 0 -> 1 -> ... -> 5 -> 0.
+ * Pick the next active corner index given the current one, restricted to the
+ * corners the user has enabled (`enabled` holds indices into `CORNERS`, in
+ * board order).
+ * - `random`: uniform over the other enabled corners (never repeats immediately).
+ * - `sequential`: walks the enabled corners in board order, wrapping around.
  */
 export function pickNext(
   current: number | null,
   order: SwitchOrder,
+  enabled: readonly number[],
 ): number {
+  const pool = enabled.length > 0 ? enabled : CORNERS.map((_, i) => i);
+  // A single corner repeats: each cue is one out-and-back rep.
+  if (pool.length === 1) return pool[0];
+
   if (order === 'sequential') {
-    if (current === null) return 0;
-    return (current + 1) % CORNER_COUNT;
+    if (current === null) return pool[0];
+    const at = pool.indexOf(current);
+    // A `current` outside the pool (the corner was just disabled) restarts the
+    // walk from the beginning.
+    if (at === -1) return pool[0];
+    return pool[(at + 1) % pool.length];
   }
 
-  if (current === null) {
-    return Math.floor(Math.random() * CORNER_COUNT);
-  }
+  const at = current === null ? -1 : pool.indexOf(current);
+  if (at === -1) return pool[Math.floor(Math.random() * pool.length)];
 
-  let next = Math.floor(Math.random() * (CORNER_COUNT - 1));
-  if (next >= current) next += 1;
-  return next;
+  let offset = Math.floor(Math.random() * (pool.length - 1));
+  if (offset >= at) offset += 1;
+  return pool[offset];
 }

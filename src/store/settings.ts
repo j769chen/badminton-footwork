@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { ALL_CORNER_NUMBERS, MIN_ENABLED_CORNERS } from '@/corners';
+
 export type SwitchOrder = 'random' | 'sequential';
 
 export type Settings = {
@@ -17,8 +19,13 @@ export type Settings = {
   sessionUntimed: boolean;
   /** Whether to play the audio cue on each switch. */
   audioCueEnabled: boolean;
-  /** Random (avoids immediate repeat) or sequential 1->6 order. */
+  /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
+  /**
+   * Corner numbers in play, as shown on the court. Always holds at least
+   * `MIN_ENABLED_CORNERS` entries and is kept in ascending order.
+   */
+  enabledCorners: number[];
 };
 
 export const SETTINGS_LIMITS = {
@@ -32,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sessionUntimed: false,
   audioCueEnabled: true,
   order: 'random',
+  enabledCorners: [...ALL_CORNER_NUMBERS],
 };
 
 type SettingsState = Settings & {
@@ -42,6 +50,8 @@ type SettingsState = Settings & {
   setSessionUntimed: (value: boolean) => void;
   setAudioCueEnabled: (value: boolean) => void;
   setOrder: (value: SwitchOrder) => void;
+  /** No-op when it would drop below `MIN_ENABLED_CORNERS`. */
+  toggleCorner: (number: number) => void;
   reset: () => void;
 };
 
@@ -76,11 +86,22 @@ export const useSettings = create<SettingsState>()(
       setSessionUntimed: (value) => set({ sessionUntimed: value }),
       setAudioCueEnabled: (value) => set({ audioCueEnabled: value }),
       setOrder: (value) => set({ order: value }),
+      toggleCorner: (number) =>
+        set((state) => {
+          const on = state.enabledCorners.includes(number);
+          if (on && state.enabledCorners.length <= MIN_ENABLED_CORNERS) {
+            return state;
+          }
+          const next = on
+            ? state.enabledCorners.filter((n) => n !== number)
+            : [...state.enabledCorners, number].sort((a, b) => a - b);
+          return { enabledCorners: next };
+        }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {
       name: 'footwork-settings',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({
         switchIntervalSec,
@@ -88,12 +109,14 @@ export const useSettings = create<SettingsState>()(
         sessionUntimed,
         audioCueEnabled,
         order,
+        enabledCorners,
       }) => ({
         switchIntervalSec,
         sessionDurationSec,
         sessionUntimed,
         audioCueEnabled,
         order,
+        enabledCorners,
       }),
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Record<string, unknown>;
@@ -101,6 +124,10 @@ export const useSettings = create<SettingsState>()(
         if (version < 1 && typeof state.sessionDurationMin === 'number') {
           state.sessionDurationSec = state.sessionDurationMin * 60;
           delete state.sessionDurationMin;
+        }
+        // v1 had no corner selection: every corner was always in play.
+        if (version < 2) {
+          state.enabledCorners = [...ALL_CORNER_NUMBERS];
         }
         return state as Partial<Settings>;
       },

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CORNERS, MIN_ENABLED_CORNERS } from '@/corners';
 import { formatClock, formatInterval } from '@/format';
 import {
   SETTINGS_LIMITS,
@@ -25,6 +26,8 @@ export default function SettingsScreen() {
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
   const order = useSettings((s) => s.order);
+  const enabledCorners = useSettings((s) => s.enabledCorners);
+  const toggleCorner = useSettings((s) => s.toggleCorner);
 
   const setSwitchInterval = useSettings((s) => s.setSwitchInterval);
   const setSessionDuration = useSettings((s) => s.setSessionDuration);
@@ -76,6 +79,33 @@ export default function SettingsScreen() {
             </View>
           }
         />
+
+        <View style={styles.card}>
+          <View style={styles.rowText}>
+            <Text style={styles.label}>Corners in play</Text>
+            <Text style={styles.help}>
+              Only the selected corners are called out. Pick one to drill a
+              single corner over and over.
+            </Text>
+          </View>
+          <View style={styles.cornerList}>
+            {CORNERS.map((corner) => {
+              const checked = enabledCorners.includes(corner.number);
+              const locked =
+                checked && enabledCorners.length <= MIN_ENABLED_CORNERS;
+              return (
+                <CornerCheckbox
+                  key={corner.number}
+                  number={corner.number}
+                  label={corner.label}
+                  checked={checked}
+                  locked={locked}
+                  onToggle={() => toggleCorner(corner.number)}
+                />
+              );
+            })}
+          </View>
+        </View>
 
         <View style={styles.card}>
           <View style={styles.rowText}>
@@ -233,6 +263,45 @@ function StepButton({
   );
 }
 
+function CornerCheckbox({
+  number,
+  label,
+  checked,
+  locked,
+  onToggle,
+}: {
+  number: number;
+  label: string;
+  checked: boolean;
+  /** Last remaining selections cannot be cleared. */
+  locked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked, disabled: locked }}
+      accessibilityLabel={`Corner ${number}, ${label}`}
+      disabled={locked}
+      onPress={onToggle}
+      style={({ pressed }) => [
+        styles.cornerRow,
+        pressed && !locked && styles.pressed,
+      ]}
+    >
+      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+        {checked && <Text style={styles.checkboxTick}>✓</Text>}
+      </View>
+      <Text style={[styles.cornerNumber, !checked && styles.cornerTextOff]}>
+        {number}
+      </Text>
+      <Text style={[styles.cornerLabel, !checked && styles.cornerTextOff]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function Segmented({
   value,
   onChange,
@@ -329,6 +398,42 @@ const styles = StyleSheet.create({
   },
   stepButtonDisabled: { opacity: 0.35 },
   stepButtonLabel: { color: Colors.text, fontSize: 26, fontWeight: '700' },
+  cornerList: { marginTop: Spacing.xs },
+  cornerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  checkbox: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  checkboxTick: {
+    color: Colors.background,
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  cornerNumber: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    width: 18,
+    textAlign: 'center',
+  },
+  cornerLabel: { color: Colors.text, fontSize: 15, fontWeight: '600' },
+  cornerTextOff: { color: Colors.textMuted },
   segmented: {
     flexDirection: 'row',
     backgroundColor: Colors.surfaceAlt,

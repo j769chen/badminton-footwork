@@ -15,6 +15,7 @@ export default function HomeScreen() {
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
   const order = useSettings((s) => s.order);
+  const enabledCorners = useSettings((s) => s.enabledCorners);
   const hasHydrated = useSettings((s) => s.hasHydrated);
 
   return (
@@ -28,14 +29,24 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.previewGrid}>
-          {CORNERS.map((corner) => (
-            <View key={corner.number} style={styles.previewItem}>
-              <View style={styles.previewDot}>
-                <Text style={styles.previewNumber}>{corner.number}</Text>
+          {CORNERS.map((corner) => {
+            // Deselected corners stay in the grid, dimmed, so the layout holds
+            // and it is obvious which ones sit out.
+            const enabled = enabledCorners.includes(corner.number);
+            return (
+              <View
+                key={corner.number}
+                style={[styles.previewItem, !enabled && styles.previewItemOff]}
+              >
+                <View
+                  style={[styles.previewDot, enabled && styles.previewDotOn]}
+                >
+                  <Text style={styles.previewNumber}>{corner.number}</Text>
+                </View>
+                <Text style={styles.previewLabel}>{corner.label}</Text>
               </View>
-              <Text style={styles.previewLabel}>{corner.label}</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         <View style={styles.summary}>
@@ -48,6 +59,10 @@ export default function HomeScreen() {
             value={
               sessionUntimed ? 'No limit' : formatDurationLabel(sessionDurationSec)
             }
+          />
+          <SummaryRow
+            label="Corners"
+            value={`${enabledCorners.length} of ${CORNERS.length}`}
           />
           <SummaryRow
             label="Order"
@@ -144,6 +159,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  previewItemOff: { opacity: 0.3 },
+  previewDotOn: { borderColor: Colors.accent },
   previewNumber: { color: Colors.text, fontWeight: '700', fontSize: 16 },
   previewLabel: { color: Colors.textMuted, fontSize: 12 },
   summary: {

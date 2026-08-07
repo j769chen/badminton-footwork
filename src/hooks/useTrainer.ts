@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Cues } from '@/audio';
-import { normalizedTravel, pickNext } from '@/corners';
+import { normalizedTravel, pickNext, toCornerIndices } from '@/corners';
 import { useSettings } from '@/store/settings';
 
 export type TrainerStatus = 'idle' | 'running' | 'paused' | 'complete';
@@ -68,7 +68,8 @@ export function useTrainer(cues: Cues): Trainer {
   /** Switch to the next corner and return how long it should stay lit (ms). */
   const advanceCorner = useCallback(() => {
     const prev = activeRef.current;
-    const next = pickNext(prev, useSettings.getState().order);
+    const { order, enabledCorners } = useSettings.getState();
+    const next = pickNext(prev, order, toCornerIndices(enabledCorners));
     activeRef.current = next;
     setActiveIndex(next);
     if (useSettings.getState().audioCueEnabled) {
@@ -119,6 +120,8 @@ export function useTrainer(cues: Cues): Trainer {
       sessionDurationSec,
       sessionUntimed,
       audioCueEnabled,
+      order,
+      enabledCorners,
     } = useSettings.getState();
     const intervalMs = switchIntervalSec * 1000;
     const now = Date.now();
@@ -147,7 +150,7 @@ export function useTrainer(cues: Cues): Trainer {
 
     // Immediately show (and cue) the first corner. With no previous target the
     // travel distance is zero, so it holds for exactly the base interval.
-    const first = pickNext(null, useSettings.getState().order);
+    const first = pickNext(null, order, toCornerIndices(enabledCorners));
     activeRef.current = first;
     setActiveIndex(first);
     if (audioCueEnabled) cues.playSwitch();
