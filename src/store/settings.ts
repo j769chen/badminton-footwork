@@ -46,6 +46,36 @@ export const DEFAULT_SETTINGS: Settings = {
   enabledCorners: ALL_CORNER_NUMBERS,
 };
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+/** Round to one decimal place (tenths of a second), avoiding float drift. */
+const roundTenths = (value: number) => Math.round(value * 10) / 10;
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+export function normalizeSwitchInterval(value: unknown): number {
+  if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.switchIntervalSec;
+  const { min, max } = SETTINGS_LIMITS.switchIntervalSec;
+  return clamp(roundTenths(value), min, max);
+}
+
+export function normalizeSessionDuration(value: unknown): number {
+  if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.sessionDurationSec;
+  const { min, max } = SETTINGS_LIMITS.sessionDurationSec;
+  return clamp(Math.round(value), min, max);
+}
+
+export function normalizeOrder(value: unknown): SwitchOrder {
+  return value === 'random' || value === 'sequential'
+    ? value
+    : DEFAULT_SETTINGS.order;
+}
+
+const normalizeFlag = (value: unknown, fallback: boolean) =>
+  typeof value === 'boolean' ? value : fallback;
+
 /**
  * Coerce a persisted selection back into the invariant `Settings.enabledCorners`
  * promises: real corner numbers only, deduped, in board order, never empty.
@@ -74,12 +104,6 @@ type SettingsState = Settings & {
   reset: () => void;
 };
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
-
-/** Round to one decimal place (tenths of a second), avoiding float drift. */
-const roundTenths = (value: number) => Math.round(value * 10) / 10;
-
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
@@ -87,21 +111,9 @@ export const useSettings = create<SettingsState>()(
       hasHydrated: false,
       markHydrated: () => set({ hasHydrated: true }),
       setSwitchInterval: (value) =>
-        set({
-          switchIntervalSec: clamp(
-            roundTenths(value),
-            SETTINGS_LIMITS.switchIntervalSec.min,
-            SETTINGS_LIMITS.switchIntervalSec.max,
-          ),
-        }),
+        set({ switchIntervalSec: normalizeSwitchInterval(value) }),
       setSessionDuration: (value) =>
-        set({
-          sessionDurationSec: clamp(
-            Math.round(value),
-            SETTINGS_LIMITS.sessionDurationSec.min,
-            SETTINGS_LIMITS.sessionDurationSec.max,
-          ),
-        }),
+        set({ sessionDurationSec: normalizeSessionDuration(value) }),
       setSessionUntimed: (value) => set({ sessionUntimed: value }),
       setAudioCueEnabled: (value) => set({ audioCueEnabled: value }),
       setOrder: (value) => set({ order: value }),
@@ -153,12 +165,25 @@ export const useSettings = create<SettingsState>()(
         return state as Partial<Settings>;
       },
       // Every rehydration passes through here, so this is the one place the
-      // corner-selection invariant has to hold - which is why `pickNext` can
-      // trust its pool instead of guarding an empty one.
+      // `Settings` invariants have to hold - which is why `pickNext` can trust
+      // its pool instead of guarding an empty one, and why a stored value that
+      // is now out of range (or a v0 payload migrated past `max`) cannot drive
+      // a session.
       merge: (persisted, current) => {
         const merged = { ...current, ...(persisted as Partial<Settings>) };
         return {
           ...merged,
+          switchIntervalSec: normalizeSwitchInterval(merged.switchIntervalSec),
+          sessionDurationSec: normalizeSessionDuration(merged.sessionDurationSec),
+          sessionUntimed: normalizeFlag(
+            merged.sessionUntimed,
+            DEFAULT_SETTINGS.sessionUntimed,
+          ),
+          audioCueEnabled: normalizeFlag(
+            merged.audioCueEnabled,
+            DEFAULT_SETTINGS.audioCueEnabled,
+          ),
+          order: normalizeOrder(merged.order),
           enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
         };
       },

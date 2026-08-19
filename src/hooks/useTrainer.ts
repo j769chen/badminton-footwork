@@ -106,7 +106,8 @@ export function useTrainer(cues: Cues): Trainer {
     }
     if (now >= nextSwitchAtRef.current) {
       const holdMs = advanceCorner();
-      nextSwitchAtRef.current = now + holdMs;
+      const fromDeadline = nextSwitchAtRef.current + holdMs;
+      nextSwitchAtRef.current = fromDeadline > now ? fromDeadline : now + holdMs;
     }
   }, [advanceCorner, finish]);
 
