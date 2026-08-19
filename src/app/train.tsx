@@ -22,6 +22,7 @@ export default function TrainScreen() {
     totalMs,
     elapsedMs,
     untimed,
+    countdownSecondsLeft,
     start,
     pause,
     resume,
@@ -43,15 +44,18 @@ export default function TrainScreen() {
 
   const progress = totalMs > 0 ? 1 - remainingMs / totalMs : 0;
   const isComplete = status === 'complete';
+  const isCountdown = status === 'countdown';
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.clock}>
-            {untimed
-              ? formatClock(elapsedMs / 1000, 'floor')
-              : formatClock(remainingMs / 1000, 'ceil')}
+            {isCountdown
+              ? '--:--'
+              : untimed
+                ? formatClock(elapsedMs / 1000, 'floor')
+                : formatClock(remainingMs / 1000, 'ceil')}
           </Text>
           {untimed ? (
             <Text style={styles.clockCaption}>Elapsed - no time limit</Text>
@@ -72,6 +76,11 @@ export default function TrainScreen() {
         <View style={styles.callout}>
           {isComplete ? (
             <Text style={styles.completeText}>Session complete</Text>
+          ) : isCountdown ? (
+            <>
+              <Text style={styles.calloutNumber}>{countdownSecondsLeft}</Text>
+              <Text style={styles.calloutLabel}>Get ready</Text>
+            </>
           ) : (
             <>
               <Text style={styles.calloutNumber}>

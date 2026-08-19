@@ -24,6 +24,11 @@ export type Settings = {
   cueMode: CueMode;
   /** Whether each switch also fires a haptic pulse, independent of `cueMode`. */
   hapticCueEnabled: boolean;
+  /**
+   * Seconds counted down before the first corner lights, so you can get set.
+   * Zero starts the drill immediately.
+   */
+  leadInSec: number;
   /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
   /**
@@ -38,6 +43,7 @@ export type Settings = {
 export const SETTINGS_LIMITS = {
   switchIntervalSec: { min: 0.5, max: 10, step: 0.1 },
   sessionDurationSec: { min: 30, max: 900, step: 1 },
+  leadInSec: { min: 0, max: 10, step: 1 },
 } as const;
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -46,6 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sessionUntimed: false,
   cueMode: 'beep',
   hapticCueEnabled: false,
+  leadInSec: 3,
   order: 'random',
   enabledCorners: ALL_CORNER_NUMBERS,
 };
@@ -68,6 +75,12 @@ export function normalizeSwitchInterval(value: unknown): number {
 export function normalizeSessionDuration(value: unknown): number {
   if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.sessionDurationSec;
   const { min, max } = SETTINGS_LIMITS.sessionDurationSec;
+  return clamp(Math.round(value), min, max);
+}
+
+export function normalizeLeadIn(value: unknown): number {
+  if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.leadInSec;
+  const { min, max } = SETTINGS_LIMITS.leadInSec;
   return clamp(Math.round(value), min, max);
 }
 
@@ -109,6 +122,7 @@ type SettingsState = Settings & {
   setSessionUntimed: (value: boolean) => void;
   setCueMode: (value: CueMode) => void;
   setHapticCueEnabled: (value: boolean) => void;
+  setLeadIn: (value: number) => void;
   setOrder: (value: SwitchOrder) => void;
   /** No-op when it would drop below `MIN_ENABLED_CORNERS`. */
   toggleCorner: (number: number) => void;
@@ -128,6 +142,7 @@ export const useSettings = create<SettingsState>()(
       setSessionUntimed: (value) => set({ sessionUntimed: value }),
       setCueMode: (value) => set({ cueMode: value }),
       setHapticCueEnabled: (value) => set({ hapticCueEnabled: value }),
+      setLeadIn: (value) => set({ leadInSec: normalizeLeadIn(value) }),
       setOrder: (value) => set({ order: value }),
       toggleCorner: (number) =>
         set((state) => {
@@ -155,6 +170,7 @@ export const useSettings = create<SettingsState>()(
         sessionUntimed,
         cueMode,
         hapticCueEnabled,
+        leadInSec,
         order,
         enabledCorners,
       }) => ({
@@ -163,6 +179,7 @@ export const useSettings = create<SettingsState>()(
         sessionUntimed,
         cueMode,
         hapticCueEnabled,
+        leadInSec,
         order,
         enabledCorners,
       }),
@@ -203,6 +220,7 @@ export const useSettings = create<SettingsState>()(
             merged.hapticCueEnabled,
             DEFAULT_SETTINGS.hapticCueEnabled,
           ),
+          leadInSec: normalizeLeadIn(merged.leadInSec),
           order: normalizeOrder(merged.order),
           enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
         };

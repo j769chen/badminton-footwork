@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CUE_MODE_LABELS } from '@/cues';
 import { CORNERS, isCornerEnabled, ORDER_LABELS } from '@/corners';
-import { formatDurationLabel, formatInterval } from '@/format';
+import { formatDurationLabel, formatInterval, formatLeadIn } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -15,6 +15,7 @@ export default function HomeScreen() {
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const cueMode = useSettings((s) => s.cueMode);
   const hapticCueEnabled = useSettings((s) => s.hapticCueEnabled);
+  const leadInSec = useSettings((s) => s.leadInSec);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const hasHydrated = useSettings((s) => s.hasHydrated);
@@ -60,6 +61,10 @@ export default function HomeScreen() {
             value={
               sessionUntimed ? 'No limit' : formatDurationLabel(sessionDurationSec)
             }
+          />
+          <SummaryRow
+            label="Get-ready countdown"
+            value={formatLeadIn(leadInSec)}
           />
           <SummaryRow
             label="Order"
