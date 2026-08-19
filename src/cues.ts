@@ -1,4 +1,5 @@
 import { setAudioModeAsync, useAudioPlayer, type AudioPlayer } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { useMemo } from 'react';
 
@@ -13,6 +14,15 @@ export const CUE_MODE_LABELS: Record<CueMode, string> = {
   beep: 'Beep',
   voice: 'Voice',
   off: 'Off',
+};
+
+/**
+ * What the trainer should fire on each switch. Bundled rather than passed as
+ * loose flags so adding a cue channel does not widen every call site.
+ */
+export type CuePreferences = {
+  mode: CueMode;
+  haptic: boolean;
 };
 
 const SPEECH_OPTIONS: Speech.SpeechOptions = {
@@ -58,11 +68,20 @@ function say(text: string) {
   }
 }
 
+function vibrate(style: Haptics.ImpactFeedbackStyle) {
+  try {
+    void Haptics.impactAsync(style).catch(() => {});
+  } catch {
+    // Taptic Engine unavailable (low-power mode, camera active, no hardware):
+    // a missing buzz should never interrupt the training session.
+  }
+}
+
 export type Cues = {
-  /** Announce a switch to `cornerNumber` in the given mode. */
-  announceSwitch: (mode: CueMode, cornerNumber: number) => void;
-  /** Announce the end of the session in the given mode. */
-  announceComplete: (mode: CueMode) => void;
+  /** Announce a switch to `cornerNumber`. */
+  announceSwitch: (prefs: CuePreferences, cornerNumber: number) => void;
+  /** Announce the end of the session. */
+  announceComplete: (prefs: CuePreferences) => void;
 };
 
 /**
@@ -76,13 +95,15 @@ export function useCues(): Cues {
 
   return useMemo(
     () => ({
-      announceSwitch: (mode, cornerNumber) => {
+      announceSwitch: ({ mode, haptic }, cornerNumber) => {
         if (mode === 'beep') fireCue(switchPlayer);
         else if (mode === 'voice') say(String(cornerNumber));
+        if (haptic) vibrate(Haptics.ImpactFeedbackStyle.Medium);
       },
-      announceComplete: (mode) => {
+      announceComplete: ({ mode, haptic }) => {
         if (mode === 'beep') fireCue(completePlayer);
         else if (mode === 'voice') say('Session complete');
+        if (haptic) vibrate(Haptics.ImpactFeedbackStyle.Heavy);
       },
     }),
     [switchPlayer, completePlayer],

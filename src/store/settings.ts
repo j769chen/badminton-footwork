@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { CueMode } from '@/audio';
+import type { CueMode } from '@/cues';
 import {
   ALL_CORNER_NUMBERS,
   MIN_ENABLED_CORNERS,
@@ -22,6 +22,8 @@ export type Settings = {
   sessionUntimed: boolean;
   /** How each switch is announced: beep, spoken corner number, or nothing. */
   cueMode: CueMode;
+  /** Whether each switch also fires a haptic pulse, independent of `cueMode`. */
+  hapticCueEnabled: boolean;
   /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
   /**
@@ -43,6 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sessionDurationSec: 120,
   sessionUntimed: false,
   cueMode: 'beep',
+  hapticCueEnabled: false,
   order: 'random',
   enabledCorners: ALL_CORNER_NUMBERS,
 };
@@ -105,6 +108,7 @@ type SettingsState = Settings & {
   setSessionDuration: (value: number) => void;
   setSessionUntimed: (value: boolean) => void;
   setCueMode: (value: CueMode) => void;
+  setHapticCueEnabled: (value: boolean) => void;
   setOrder: (value: SwitchOrder) => void;
   /** No-op when it would drop below `MIN_ENABLED_CORNERS`. */
   toggleCorner: (number: number) => void;
@@ -123,6 +127,7 @@ export const useSettings = create<SettingsState>()(
         set({ sessionDurationSec: normalizeSessionDuration(value) }),
       setSessionUntimed: (value) => set({ sessionUntimed: value }),
       setCueMode: (value) => set({ cueMode: value }),
+      setHapticCueEnabled: (value) => set({ hapticCueEnabled: value }),
       setOrder: (value) => set({ order: value }),
       toggleCorner: (number) =>
         set((state) => {
@@ -149,6 +154,7 @@ export const useSettings = create<SettingsState>()(
         sessionDurationSec,
         sessionUntimed,
         cueMode,
+        hapticCueEnabled,
         order,
         enabledCorners,
       }) => ({
@@ -156,6 +162,7 @@ export const useSettings = create<SettingsState>()(
         sessionDurationSec,
         sessionUntimed,
         cueMode,
+        hapticCueEnabled,
         order,
         enabledCorners,
       }),
@@ -192,6 +199,10 @@ export const useSettings = create<SettingsState>()(
             DEFAULT_SETTINGS.sessionUntimed,
           ),
           cueMode: normalizeCueMode(merged.cueMode),
+          hapticCueEnabled: normalizeFlag(
+            merged.hapticCueEnabled,
+            DEFAULT_SETTINGS.hapticCueEnabled,
+          ),
           order: normalizeOrder(merged.order),
           enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
         };

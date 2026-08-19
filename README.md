@@ -21,6 +21,9 @@ than stopping it.
   tone), **Voice** (the corner number spoken out loud, so you can put the phone
   down instead of watching it), or **Off** for a visual-only drill. Spoken cues
   ride the same audio session, so they duck music exactly as the beep does.
+- **Optional haptic cue.** A vibration on each call, independent of the audio
+  mode. Pair it with **Off** to drill silently in a shared space, or add it to
+  Beep/Voice for a cue you can feel as well as hear.
 - **Session countdown.** The workout runs for a set number of minutes, then
   stops with a "session complete" cue - or drill untimed ("No limit"), where the
   clock counts up and the session ends only when you stop it.
@@ -34,6 +37,7 @@ than stopping it.
   - Corners in play (any subset, minimum one)
   - Switch order: random (no immediate repeats) or sequential
   - Audio cue: beep, voice (spoken corner number), or off
+  - Vibrate on switch on/off
 - **Pause / resume / stop** controls and a keep-awake screen during sessions.
 
 ## Tech stack
@@ -44,6 +48,8 @@ than stopping it.
   audio-session ducking
 - [`expo-speech`](https://docs.expo.dev/versions/latest/sdk/speech/) for spoken
   corner callouts
+- [`expo-haptics`](https://docs.expo.dev/versions/latest/sdk/haptics/) for the
+  optional vibration cue
 - [`expo-keep-awake`](https://docs.expo.dev/versions/latest/sdk/keep-awake/) to
   keep the screen on during a session
 - [`expo-image`](https://docs.expo.dev/versions/latest/sdk/image/) for the court
@@ -92,7 +98,7 @@ src/
     useTrainer.ts   Drift-free timing engine (switches + countdown)
   store/
     settings.ts     Persisted settings (Zustand + AsyncStorage)
-  audio.ts          Audio session config + cue triggers
+  cues.ts           Audio session config + beep / voice / haptic cues
   corners.ts        Corner definitions + next-corner selection
   format.ts         Clock / interval / duration label formatting
   theme.ts          Design tokens

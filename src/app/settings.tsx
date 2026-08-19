@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CUE_MODE_LABELS, type CueMode } from '@/audio';
+import { CUE_MODE_LABELS, type CueMode } from '@/cues';
 import {
   CORNERS,
   isCornerEnabled,
@@ -27,6 +27,7 @@ export default function SettingsScreen() {
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const cueMode = useSettings((s) => s.cueMode);
+  const hapticCueEnabled = useSettings((s) => s.hapticCueEnabled);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const toggleCorner = useSettings((s) => s.toggleCorner);
@@ -35,6 +36,7 @@ export default function SettingsScreen() {
   const setSessionDuration = useSettings((s) => s.setSessionDuration);
   const setSessionUntimed = useSettings((s) => s.setSessionUntimed);
   const setCueMode = useSettings((s) => s.setCueMode);
+  const setHapticCueEnabled = useSettings((s) => s.setHapticCueEnabled);
   const setOrder = useSettings((s) => s.setOrder);
   const reset = useSettings((s) => s.reset);
 
@@ -137,6 +139,21 @@ export default function SettingsScreen() {
             value={cueMode}
             onChange={setCueMode}
           />
+          <View style={styles.toggleRow}>
+            <View style={styles.rowText}>
+              <Text style={styles.toggleLabel}>Vibrate on switch</Text>
+              <Text style={styles.help}>
+                Adds a haptic pulse to each call, independent of the audio cue.
+                Pair it with Off to drill silently in a shared space.
+              </Text>
+            </View>
+            <Switch
+              value={hapticCueEnabled}
+              onValueChange={setHapticCueEnabled}
+              trackColor={{ true: Colors.accent, false: Colors.border }}
+              thumbColor={Colors.text}
+            />
+          </View>
         </View>
 
         <Pressable

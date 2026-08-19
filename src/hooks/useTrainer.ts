@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { Cues } from '@/audio';
 import { normalizedTravel, pickNext, type Corner } from '@/corners';
+import type { CuePreferences, Cues } from '@/cues';
 import { useSettings } from '@/store/settings';
 
 export type TrainerStatus = 'idle' | 'running' | 'paused' | 'complete';
@@ -16,6 +16,11 @@ const TICK_MS = 200;
  * more time to reach. Deterministic - depends only on the distance.
  */
 const DISTANCE_TIME_FACTOR = 0.15;
+
+function cuePreferences(): CuePreferences {
+  const { cueMode, hapticCueEnabled } = useSettings.getState();
+  return { mode: cueMode, haptic: hapticCueEnabled };
+}
 
 type Trainer = {
   status: TrainerStatus;
@@ -68,7 +73,7 @@ export function useTrainer(cues: Cues): Trainer {
 
   const cueSwitch = useCallback(
     (corner: Corner) => {
-      cues.announceSwitch(useSettings.getState().cueMode, corner.number);
+      cues.announceSwitch(cuePreferences(), corner.number);
     },
     [cues],
   );
@@ -93,7 +98,7 @@ export function useTrainer(cues: Cues): Trainer {
     setActiveCorner(null);
     activeRef.current = null;
     setStatus('complete');
-    cues.announceComplete(useSettings.getState().cueMode);
+    cues.announceComplete(cuePreferences());
   }, [cues, clearTick]);
 
   const tick = useCallback(() => {

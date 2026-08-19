@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useCues } from '@/audio';
+import { useCues } from '@/cues';
 import { Court } from '@/components/Court';
 import { formatClock } from '@/format';
 import { useTrainer } from '@/hooks/useTrainer';
