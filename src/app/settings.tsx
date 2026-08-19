@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CUE_MODE_LABELS, type CueMode } from '@/audio';
 import {
   CORNERS,
   isCornerEnabled,
@@ -25,7 +26,7 @@ export default function SettingsScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
-  const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
+  const cueMode = useSettings((s) => s.cueMode);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const toggleCorner = useSettings((s) => s.toggleCorner);
@@ -33,7 +34,7 @@ export default function SettingsScreen() {
   const setSwitchInterval = useSettings((s) => s.setSwitchInterval);
   const setSessionDuration = useSettings((s) => s.setSessionDuration);
   const setSessionUntimed = useSettings((s) => s.setSessionUntimed);
-  const setAudioCueEnabled = useSettings((s) => s.setAudioCueEnabled);
+  const setCueMode = useSettings((s) => s.setCueMode);
   const setOrder = useSettings((s) => s.setOrder);
   const reset = useSettings((s) => s.reset);
 
@@ -115,25 +116,27 @@ export default function SettingsScreen() {
               Random avoids repeating the same corner twice in a row.
             </Text>
           </View>
-          <Segmented value={order} onChange={setOrder} />
+          <Segmented<SwitchOrder>
+            labels={ORDER_LABELS}
+            value={order}
+            onChange={setOrder}
+          />
         </View>
 
         <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <View style={styles.rowText}>
-              <Text style={styles.label}>Audio cue</Text>
-              <Text style={styles.help}>
-                Plays a short beep. Turn off for a
-                visual-only drill
-              </Text>
-            </View>
-            <Switch
-              value={audioCueEnabled}
-              onValueChange={setAudioCueEnabled}
-              trackColor={{ true: Colors.accent, false: Colors.border }}
-              thumbColor={Colors.text}
-            />
+          <View style={styles.rowText}>
+            <Text style={styles.label}>Audio cue</Text>
+            <Text style={styles.help}>
+              Beep plays a short tone. Voice calls the corner number out loud so
+              you can drill without watching the screen. Off is a visual-only
+              drill
+            </Text>
           </View>
+          <Segmented<CueMode>
+            labels={CUE_MODE_LABELS}
+            value={cueMode}
+            onChange={setCueMode}
+          />
         </View>
 
         <Pressable
@@ -303,14 +306,16 @@ function CornerCheckbox({
   );
 }
 
-function Segmented({
+function Segmented<T extends string>({
+  labels,
   value,
   onChange,
 }: {
-  value: SwitchOrder;
-  onChange: (value: SwitchOrder) => void;
+  labels: Record<T, string>;
+  value: T;
+  onChange: (value: T) => void;
 }) {
-  const options = Object.entries(ORDER_LABELS) as [SwitchOrder, string][];
+  const options = Object.entries(labels) as [T, string][];
   return (
     <View style={styles.segmented}>
       {options.map(([key, label]) => {

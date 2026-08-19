@@ -66,6 +66,13 @@ export function useTrainer(cues: Cues): Trainer {
     }
   }, []);
 
+  const cueSwitch = useCallback(
+    (corner: Corner) => {
+      cues.announceSwitch(useSettings.getState().cueMode, corner.number);
+    },
+    [cues],
+  );
+
   /** Switch to the next corner and return how long it should stay lit (ms). */
   const advanceCorner = useCallback(() => {
     const prev = activeRef.current;
@@ -73,14 +80,12 @@ export function useTrainer(cues: Cues): Trainer {
     const next = pickNext(prev, order, enabledCorners);
     activeRef.current = next;
     setActiveCorner(next);
-    if (useSettings.getState().audioCueEnabled) {
-      cues.playSwitch();
-    }
+    cueSwitch(next);
     return (
       intervalMsRef.current *
       (1 + DISTANCE_TIME_FACTOR * normalizedTravel(prev, next))
     );
-  }, [cues]);
+  }, [cueSwitch]);
 
   const finish = useCallback(() => {
     clearTick();
@@ -88,9 +93,7 @@ export function useTrainer(cues: Cues): Trainer {
     setActiveCorner(null);
     activeRef.current = null;
     setStatus('complete');
-    if (useSettings.getState().audioCueEnabled) {
-      cues.playComplete();
-    }
+    cues.announceComplete(useSettings.getState().cueMode);
   }, [cues, clearTick]);
 
   const tick = useCallback(() => {
@@ -121,7 +124,6 @@ export function useTrainer(cues: Cues): Trainer {
       switchIntervalSec,
       sessionDurationSec,
       sessionUntimed,
-      audioCueEnabled,
       order,
       enabledCorners,
     } = useSettings.getState();
@@ -155,11 +157,11 @@ export function useTrainer(cues: Cues): Trainer {
     const first = pickNext(null, order, enabledCorners);
     activeRef.current = first;
     setActiveCorner(first);
-    if (audioCueEnabled) cues.playSwitch();
+    cueSwitch(first);
 
     setStatus('running');
     startTick();
-  }, [cues, startTick]);
+  }, [cueSwitch, startTick]);
 
   const pause = useCallback(() => {
     if (status !== 'running') return;

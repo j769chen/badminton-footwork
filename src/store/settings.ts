@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import type { CueMode } from '@/audio';
 import {
   ALL_CORNER_NUMBERS,
   MIN_ENABLED_CORNERS,
@@ -19,8 +20,8 @@ export type Settings = {
    * back on restores the previously chosen length.
    */
   sessionUntimed: boolean;
-  /** Whether to play the audio cue on each switch. */
-  audioCueEnabled: boolean;
+  /** How each switch is announced: beep, spoken corner number, or nothing. */
+  cueMode: CueMode;
   /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
   /**
@@ -41,7 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   switchIntervalSec: 2.5,
   sessionDurationSec: 120,
   sessionUntimed: false,
-  audioCueEnabled: true,
+  cueMode: 'beep',
   order: 'random',
   enabledCorners: ALL_CORNER_NUMBERS,
 };
@@ -65,6 +66,12 @@ export function normalizeSessionDuration(value: unknown): number {
   if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.sessionDurationSec;
   const { min, max } = SETTINGS_LIMITS.sessionDurationSec;
   return clamp(Math.round(value), min, max);
+}
+
+export function normalizeCueMode(value: unknown): CueMode {
+  return value === 'beep' || value === 'voice' || value === 'off'
+    ? value
+    : DEFAULT_SETTINGS.cueMode;
 }
 
 export function normalizeOrder(value: unknown): SwitchOrder {
@@ -97,7 +104,7 @@ type SettingsState = Settings & {
   setSwitchInterval: (value: number) => void;
   setSessionDuration: (value: number) => void;
   setSessionUntimed: (value: boolean) => void;
-  setAudioCueEnabled: (value: boolean) => void;
+  setCueMode: (value: CueMode) => void;
   setOrder: (value: SwitchOrder) => void;
   /** No-op when it would drop below `MIN_ENABLED_CORNERS`. */
   toggleCorner: (number: number) => void;
@@ -115,7 +122,7 @@ export const useSettings = create<SettingsState>()(
       setSessionDuration: (value) =>
         set({ sessionDurationSec: normalizeSessionDuration(value) }),
       setSessionUntimed: (value) => set({ sessionUntimed: value }),
-      setAudioCueEnabled: (value) => set({ audioCueEnabled: value }),
+      setCueMode: (value) => set({ cueMode: value }),
       setOrder: (value) => set({ order: value }),
       toggleCorner: (number) =>
         set((state) => {
@@ -135,20 +142,20 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'footwork-settings',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({
         switchIntervalSec,
         sessionDurationSec,
         sessionUntimed,
-        audioCueEnabled,
+        cueMode,
         order,
         enabledCorners,
       }) => ({
         switchIntervalSec,
         sessionDurationSec,
         sessionUntimed,
-        audioCueEnabled,
+        cueMode,
         order,
         enabledCorners,
       }),
@@ -162,6 +169,11 @@ export const useSettings = create<SettingsState>()(
         // v2 added `enabledCorners`. v1 payloads simply lack the field, which
         // `merge` below normalises to the full court, so there is nothing to
         // migrate here.
+        // v3 replaced the `audioCueEnabled` boolean with a three-way `cueMode`.
+        if (version < 3 && typeof state.audioCueEnabled === 'boolean') {
+          state.cueMode = state.audioCueEnabled ? 'beep' : 'off';
+          delete state.audioCueEnabled;
+        }
         return state as Partial<Settings>;
       },
       // Every rehydration passes through here, so this is the one place the
@@ -179,10 +191,7 @@ export const useSettings = create<SettingsState>()(
             merged.sessionUntimed,
             DEFAULT_SETTINGS.sessionUntimed,
           ),
-          audioCueEnabled: normalizeFlag(
-            merged.audioCueEnabled,
-            DEFAULT_SETTINGS.audioCueEnabled,
-          ),
+          cueMode: normalizeCueMode(merged.cueMode),
           order: normalizeOrder(merged.order),
           enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
         };

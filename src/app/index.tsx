@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CUE_MODE_LABELS } from '@/audio';
 import { CORNERS, isCornerEnabled, ORDER_LABELS } from '@/corners';
 import { formatDurationLabel, formatInterval } from '@/format';
 import { useSettings } from '@/store/settings';
@@ -12,7 +13,7 @@ export default function HomeScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
-  const audioCueEnabled = useSettings((s) => s.audioCueEnabled);
+  const cueMode = useSettings((s) => s.cueMode);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const hasHydrated = useSettings((s) => s.hasHydrated);
@@ -65,7 +66,7 @@ export default function HomeScreen() {
           />
           <SummaryRow
             label="Audio cue"
-            value={audioCueEnabled ? 'On' : 'Off'}
+            value={CUE_MODE_LABELS[cueMode]}
           />
         </View>
 
