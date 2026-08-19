@@ -17,8 +17,10 @@ than stopping it.
   corners are hidden from the court, and both switch orders respect the
   selection.
 - **Music-friendly audio cues.** The audio session uses `duckOthers`, so your
-  music keeps playing and only dips for each beep. The cue can be turned off
-  entirely for a visual-only drill.
+  music keeps playing and only dips for each cue. Three modes: **Beep** (a short
+  tone), **Voice** (the corner number spoken out loud, so you can put the phone
+  down instead of watching it), or **Off** for a visual-only drill. Spoken cues
+  ride the same audio session, so they duck music exactly as the beep does.
 - **Session countdown.** The workout runs for a set number of minutes, then
   stops with a "session complete" cue - or drill untimed ("No limit"), where the
   clock counts up and the session ends only when you stop it.
@@ -31,7 +33,7 @@ than stopping it.
   - Session length (30s-15 min, or no limit)
   - Corners in play (any subset, minimum one)
   - Switch order: random (no immediate repeats) or sequential
-  - Audio cue on/off
+  - Audio cue: beep, voice (spoken corner number), or off
 - **Pause / resume / stop** controls and a keep-awake screen during sessions.
 
 ## Tech stack
@@ -40,6 +42,8 @@ than stopping it.
 - [Expo Router](https://docs.expo.dev/router/introduction/) for navigation
 - [`expo-audio`](https://docs.expo.dev/versions/latest/sdk/audio/) for the cue and
   audio-session ducking
+- [`expo-speech`](https://docs.expo.dev/versions/latest/sdk/speech/) for spoken
+  corner callouts
 - [`expo-keep-awake`](https://docs.expo.dev/versions/latest/sdk/keep-awake/) to
   keep the screen on during a session
 - [`expo-image`](https://docs.expo.dev/versions/latest/sdk/image/) for the court
