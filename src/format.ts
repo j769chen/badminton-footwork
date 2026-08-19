@@ -1,6 +1,11 @@
 /** Format a whole number of seconds as mm:ss. */
-export function formatClock(totalSeconds: number): string {
-  const total = Math.max(0, Math.round(totalSeconds));
+export function formatClock(
+  totalSeconds: number,
+  mode: 'round' | 'ceil' | 'floor' = 'round',
+): string {
+  const rounder =
+    mode === 'ceil' ? Math.ceil : mode === 'floor' ? Math.floor : Math.round;
+  const total = Math.max(0, rounder(totalSeconds));
   const mm = Math.floor(total / 60);
   const ss = total % 60;
   return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;

@@ -14,12 +14,12 @@ import {
   CORNERS,
   isCornerEnabled,
   MIN_ENABLED_CORNERS,
+  ORDER_LABELS,
   type SwitchOrder,
 } from '@/corners';
 import { formatClock, formatInterval } from '@/format';
 import { SETTINGS_LIMITS, useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
-import React from 'react';
 
 export default function SettingsScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
@@ -310,18 +310,15 @@ function Segmented({
   value: SwitchOrder;
   onChange: (value: SwitchOrder) => void;
 }) {
-  const options: { key: SwitchOrder; label: string }[] = [
-    { key: 'random', label: 'Random' },
-    { key: 'sequential', label: 'Sequential' },
-  ];
+  const options = Object.entries(ORDER_LABELS) as [SwitchOrder, string][];
   return (
     <View style={styles.segmented}>
-      {options.map((opt) => {
-        const selected = opt.key === value;
+      {options.map(([key, label]) => {
+        const selected = key === value;
         return (
           <Pressable
-            key={opt.key}
-            onPress={() => onChange(opt.key)}
+            key={key}
+            onPress={() => onChange(key)}
             style={[styles.segment, selected && styles.segmentSelected]}
           >
             <Text
@@ -330,7 +327,7 @@ function Segmented({
                 selected && styles.segmentLabelSelected,
               ]}
             >
-              {opt.label}
+              {label}
             </Text>
           </Pressable>
         );

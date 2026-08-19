@@ -2,11 +2,10 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CORNERS, isCornerEnabled } from '@/corners';
+import { CORNERS, isCornerEnabled, ORDER_LABELS } from '@/corners';
 import { formatDurationLabel, formatInterval } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
-import React from 'react';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -62,7 +61,7 @@ export default function HomeScreen() {
           />
           <SummaryRow
             label="Order"
-            value={order === 'random' ? 'Random' : 'Sequential'}
+            value={ORDER_LABELS[order]}
           />
           <SummaryRow
             label="Audio cue"
@@ -202,10 +201,4 @@ const styles = StyleSheet.create({
   },
   settingsLabel: { color: Colors.text, fontSize: 18, fontWeight: '700' },
   pressed: { opacity: 0.8 },
-  musicHint: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-  },
 });

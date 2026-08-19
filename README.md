@@ -20,10 +20,15 @@ than stopping it.
   music keeps playing and only dips for each beep. The cue can be turned off
   entirely for a visual-only drill.
 - **Session countdown.** The workout runs for a set number of minutes, then
-  stops with a "session complete" cue.
-- **Configurable settings** (persisted between launches):
-  - Time between switches (1-10s)
-  - Session length (1-60 min)
+  stops with a "session complete" cue - or drill untimed ("No limit"), where the
+  clock counts up and the session ends only when you stop it.
+- **Distance-aware dwell.** A called corner stays lit for the configured
+  interval plus up to 15% extra for the longest cross-court move, so distant
+  targets stay reachable without slowing the whole drill down.
+- **Configurable settings** (persisted between launches, and re-validated on
+  load so a stored value that is out of range can never drive a session):
+  - Time between switches (0.5-10s, in tenths of a second)
+  - Session length (30s-15 min, or no limit)
   - Corners in play (any subset, minimum one)
   - Switch order: random (no immediate repeats) or sequential
   - Audio cue on/off
@@ -37,6 +42,10 @@ than stopping it.
   audio-session ducking
 - [`expo-keep-awake`](https://docs.expo.dev/versions/latest/sdk/keep-awake/) to
   keep the screen on during a session
+- [`expo-image`](https://docs.expo.dev/versions/latest/sdk/image/) for the court
+  backdrop
+- [`@react-native-community/slider`](https://github.com/callstack/react-native-slider)
+  for the settings sliders
 - [Zustand](https://github.com/pmndrs/zustand) + AsyncStorage for persisted
   settings
 
@@ -81,8 +90,10 @@ src/
     settings.ts     Persisted settings (Zustand + AsyncStorage)
   audio.ts          Audio session config + cue triggers
   corners.ts        Corner definitions + next-corner selection
+  format.ts         Clock / interval / duration label formatting
   theme.ts          Design tokens
 assets/
+  images/           court.png (court backdrop)
   sounds/           beep.wav, complete.wav (generated tones)
 ```
 

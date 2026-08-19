@@ -10,6 +10,12 @@ export type Corner = {
 /** Random (avoids immediate repeat) or sequential board order. */
 export type SwitchOrder = 'random' | 'sequential';
 
+/** Display labels for each order, shared by the home summary and the picker. */
+export const ORDER_LABELS: Record<SwitchOrder, string> = {
+  random: 'Random',
+  sequential: 'Sequential',
+};
+
 /**
  * The footwork targets, arranged as two vertical columns sitting on the
  * court's left and right sidelines. Front = net side (top), Rear = baseline

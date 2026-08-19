@@ -6,16 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCues } from '@/audio';
 import { Court } from '@/components/Court';
+import { formatClock } from '@/format';
 import { useTrainer } from '@/hooks/useTrainer';
 import { Colors, Radius, Spacing } from '@/theme';
-
-function formatTime(ms: number, mode: 'ceil' | 'floor' = 'ceil'): string {
-  const round = mode === 'ceil' ? Math.ceil : Math.floor;
-  const total = Math.max(0, round(ms / 1000));
-  const mm = Math.floor(total / 60);
-  const ss = total % 60;
-  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
-}
 
 export default function TrainScreen() {
   useKeepAwake();
@@ -57,8 +50,8 @@ export default function TrainScreen() {
         <View style={styles.header}>
           <Text style={styles.clock}>
             {untimed
-              ? formatTime(elapsedMs, 'floor')
-              : formatTime(remainingMs)}
+              ? formatClock(elapsedMs / 1000, 'floor')
+              : formatClock(remainingMs / 1000, 'ceil')}
           </Text>
           {untimed ? (
             <Text style={styles.clockCaption}>Elapsed - no time limit</Text>
