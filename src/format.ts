@@ -16,6 +16,13 @@ export function formatInterval(seconds: number): string {
   return `${seconds.toFixed(1)}s`;
 }
 
+/** Distance covered, e.g. "388 m" or "1.21 km". */
+export function formatDistance(metres: number): string {
+  const safe = Math.max(0, metres);
+  if (safe >= 1000) return `${(safe / 1000).toFixed(2)} km`;
+  return `${Math.round(safe)} m`;
+}
+
 /** Jitter amount, e.g. "±20%", or "Off" when the cadence is exact. */
 export function formatJitter(percent: number): string {
   return percent <= 0 ? 'Off' : `±${Math.round(percent)}%`;

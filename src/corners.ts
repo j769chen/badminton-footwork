@@ -49,6 +49,40 @@ export const ALL_CORNER_NUMBERS: readonly number[] = CORNERS.map(
  */
 export const MIN_ENABLED_CORNERS = 1;
 
+/**
+ * Real court dimensions, used to turn the fractional corner positions into an
+ * estimated distance covered.
+ *
+ * The corner columns sit on the two sidelines and the front/rear rows on the
+ * net and baseline, so `RIGHT_X - LEFT_X` spans the court's width and
+ * `BOTTOM_Y - TOP_Y` spans one half-court's depth. The court is not square,
+ * so x and y have to be scaled separately before any distance is taken.
+ */
+const COURT_WIDTH_M = 6.1;
+const COURT_DEPTH_M = 6.7;
+const METRES_PER_X = COURT_WIDTH_M / (RIGHT_X - LEFT_X);
+const METRES_PER_Y = COURT_DEPTH_M / (BOTTOM_Y - TOP_Y);
+
+/** The centre the player recovers to between every movement. */
+const CENTRE_X = 0.5;
+const CENTRE_Y = 0.5;
+
+/**
+ * Estimated metres covered by one rep: out from the centre to `corner` and back
+ * again. It deliberately does not depend on the previous target - the drill
+ * recovers to the centre every time, so a rep's distance is a property of the
+ * corner alone. (`normalizedTravel` measures corner-to-corner instead, because
+ * it feeds dwell time rather than distance.)
+ *
+ * An estimate, not a measurement: it assumes the player takes the direct line
+ * and actually returns to the centre.
+ */
+export function repMetres(corner: Corner): number {
+  const dx = (corner.x - CENTRE_X) * METRES_PER_X;
+  const dy = (corner.y - CENTRE_Y) * METRES_PER_Y;
+  return 2 * Math.hypot(dx, dy);
+}
+
 const distanceBetween = (a: Corner, b: Corner) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 

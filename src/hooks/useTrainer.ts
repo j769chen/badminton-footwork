@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { normalizedTravel, pickNext, type Corner } from '@/corners';
+import {
+  normalizedTravel,
+  pickNext,
+  repMetres,
+  type Corner,
+} from '@/corners';
 import type { CuePreferences, Cues } from '@/cues';
 import { useSettings } from '@/store/settings';
 
@@ -51,6 +56,10 @@ type Trainer = {
   totalMs: number;
   /** Time elapsed since the session started (excludes paused time). */
   elapsedMs: number;
+  /** Corners called so far this session. */
+  reps: number;
+  /** Estimated metres covered so far, assuming a recovery to centre per rep. */
+  distanceMetres: number;
   /** True when the session has no time limit (counts up, never auto-finishes). */
   untimed: boolean;
   /** Seconds still to count off during the pre-session lead-in. */
@@ -72,6 +81,8 @@ export function useTrainer(cues: Cues): Trainer {
   const [remainingMs, setRemainingMs] = useState(0);
   const [totalMs, setTotalMs] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [reps, setReps] = useState(0);
+  const [distanceMetres, setDistanceMetres] = useState(0);
   const [untimed, setUntimed] = useState(false);
   const [countdownSecondsLeft, setCountdownSecondsLeft] = useState(0);
 
@@ -100,6 +111,11 @@ export function useTrainer(cues: Cues): Trainer {
     }
   }, []);
 
+  const countRep = useCallback((corner: Corner) => {
+    setReps((n) => n + 1);
+    setDistanceMetres((m) => m + repMetres(corner));
+  }, []);
+
   const cueSwitch = useCallback(
     (corner: Corner) => {
       cues.announceSwitch(cuePreferences(), corner.number);
@@ -115,12 +131,13 @@ export function useTrainer(cues: Cues): Trainer {
     activeRef.current = next;
     setActiveCorner(next);
     cueSwitch(next);
+    countRep(next);
     return applyJitter(
       intervalMsRef.current *
         (1 + DISTANCE_TIME_FACTOR * normalizedTravel(prev, next)),
       jitterPctRef.current,
     );
-  }, [cueSwitch]);
+  }, [countRep, cueSwitch]);
 
   const finish = useCallback(() => {
     clearTick();
@@ -176,6 +193,8 @@ export function useTrainer(cues: Cues): Trainer {
 
     setUntimed(sessionUntimed);
     setElapsedMs(0);
+    setReps(0);
+    setDistanceMetres(0);
 
     if (sessionUntimed) {
       // No countdown: the clock counts up and the session ends only on stop.
@@ -197,11 +216,12 @@ export function useTrainer(cues: Cues): Trainer {
     activeRef.current = first;
     setActiveCorner(first);
     cueSwitch(first);
+    countRep(first);
 
     setCountdownSecondsLeft(0);
     setStatus('running');
     startTick();
-  }, [cueSwitch, startTick]);
+  }, [countRep, cueSwitch, startTick]);
 
   const countdownTick = useCallback(() => {
     const remaining = countdownEndAtRef.current - Date.now();
@@ -230,6 +250,8 @@ export function useTrainer(cues: Cues): Trainer {
     setCountdownSecondsLeft(leadInSec);
     setActiveCorner(null);
     activeRef.current = null;
+    setReps(0);
+    setDistanceMetres(0);
     setStatus('countdown');
     cues.announceCountdown(cuePreferences(), leadInSec);
     tickRef.current = setInterval(countdownTick, COUNTDOWN_TICK_MS);
@@ -273,6 +295,8 @@ export function useTrainer(cues: Cues): Trainer {
     setElapsedMs(0);
     elapsedBeforeRef.current = 0;
     setCountdownSecondsLeft(0);
+    setReps(0);
+    setDistanceMetres(0);
   }, [clearTick]);
 
   useEffect(() => clearTick, [clearTick]);
@@ -283,6 +307,8 @@ export function useTrainer(cues: Cues): Trainer {
     remainingMs,
     totalMs,
     elapsedMs,
+    reps,
+    distanceMetres,
     untimed,
     countdownSecondsLeft,
     start,
