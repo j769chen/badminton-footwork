@@ -16,6 +16,11 @@ export function formatInterval(seconds: number): string {
   return `${seconds.toFixed(1)}s`;
 }
 
+/** Lead-in length, e.g. "3s", or "Off" when there is no countdown. */
+export function formatLeadIn(seconds: number): string {
+  return seconds <= 0 ? 'Off' : `${Math.round(seconds)}s`;
+}
+
 /** Human-friendly duration, e.g. "10 min", "1 min 30 s", "45 s". */
 export function formatDurationLabel(totalSeconds: number): string {
   const total = Math.max(0, Math.round(totalSeconds));

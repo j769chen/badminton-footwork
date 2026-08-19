@@ -18,7 +18,7 @@ import {
   ORDER_LABELS,
   type SwitchOrder,
 } from '@/corners';
-import { formatClock, formatInterval } from '@/format';
+import { formatClock, formatInterval, formatLeadIn } from '@/format';
 import { SETTINGS_LIMITS, useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -28,6 +28,7 @@ export default function SettingsScreen() {
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
   const cueMode = useSettings((s) => s.cueMode);
   const hapticCueEnabled = useSettings((s) => s.hapticCueEnabled);
+  const leadInSec = useSettings((s) => s.leadInSec);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const toggleCorner = useSettings((s) => s.toggleCorner);
@@ -37,6 +38,7 @@ export default function SettingsScreen() {
   const setSessionUntimed = useSettings((s) => s.setSessionUntimed);
   const setCueMode = useSettings((s) => s.setCueMode);
   const setHapticCueEnabled = useSettings((s) => s.setHapticCueEnabled);
+  const setLeadIn = useSettings((s) => s.setLeadIn);
   const setOrder = useSettings((s) => s.setOrder);
   const reset = useSettings((s) => s.reset);
 
@@ -110,6 +112,17 @@ export default function SettingsScreen() {
             })}
           </View>
         </View>
+
+        <SliderControl
+          label="Get-ready countdown"
+          help="Counted off before the first corner lights, so you can take your stance. Set to Off to start immediately."
+          value={leadInSec}
+          format={formatLeadIn}
+          min={SETTINGS_LIMITS.leadInSec.min}
+          max={SETTINGS_LIMITS.leadInSec.max}
+          step={SETTINGS_LIMITS.leadInSec.step}
+          onChange={setLeadIn}
+        />
 
         <View style={styles.card}>
           <View style={styles.rowText}>

@@ -78,6 +78,8 @@ function vibrate(style: Haptics.ImpactFeedbackStyle) {
 }
 
 export type Cues = {
+  /** Announce `secondsLeft` of the pre-session lead-in. */
+  announceCountdown: (prefs: CuePreferences, secondsLeft: number) => void;
   /** Announce a switch to `cornerNumber`. */
   announceSwitch: (prefs: CuePreferences, cornerNumber: number) => void;
   /** Announce the end of the session. */
@@ -95,6 +97,11 @@ export function useCues(): Cues {
 
   return useMemo(
     () => ({
+      announceCountdown: ({ mode, haptic }, secondsLeft) => {
+        if (mode === 'beep') fireCue(switchPlayer);
+        else if (mode === 'voice') say(String(secondsLeft));
+        if (haptic) vibrate(Haptics.ImpactFeedbackStyle.Light);
+      },
       announceSwitch: ({ mode, haptic }, cornerNumber) => {
         if (mode === 'beep') fireCue(switchPlayer);
         else if (mode === 'voice') say(String(cornerNumber));

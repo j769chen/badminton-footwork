@@ -24,6 +24,10 @@ than stopping it.
 - **Optional haptic cue.** A vibration on each call, independent of the audio
   mode. Pair it with **Off** to drill silently in a shared space, or add it to
   Beep/Voice for a cue you can feel as well as hear.
+- **Get-ready countdown.** A configurable lead-in (default 3s) counted off
+  before the first corner lights, so you can take your stance instead of being
+  caught flat-footed. Each second is cued like a switch is, and it can be set to
+  Off to start immediately.
 - **Session countdown.** The workout runs for a set number of minutes, then
   stops with a "session complete" cue - or drill untimed ("No limit"), where the
   clock counts up and the session ends only when you stop it.
@@ -38,6 +42,7 @@ than stopping it.
   - Switch order: random (no immediate repeats) or sequential
   - Audio cue: beep, voice (spoken corner number), or off
   - Vibrate on switch on/off
+  - Get-ready countdown (0-10s, 0 = off)
 - **Pause / resume / stop** controls and a keep-awake screen during sessions.
 
 ## Tech stack
@@ -79,6 +84,7 @@ code with the Expo Go / a dev client app on your phone.
 
 1. Start your music in Spotify / SoundCloud / Apple Music first.
 2. Open the app, adjust settings if needed, and tap **Start Session**.
+   Take your stance during the get-ready countdown.
 3. Move to whichever corner is highlighted, then recover to the centre. Repeat
    until the countdown ends.
 
@@ -100,7 +106,7 @@ src/
     settings.ts     Persisted settings (Zustand + AsyncStorage)
   cues.ts           Audio session config + beep / voice / haptic cues
   corners.ts        Corner definitions + next-corner selection
-  format.ts         Clock / interval / duration label formatting
+  format.ts         Clock / interval / duration / lead-in label formatting
   theme.ts          Design tokens
 assets/
   images/           court.png (court backdrop)
