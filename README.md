@@ -21,19 +21,33 @@ than stopping it.
   tone), **Voice** (the corner number spoken out loud, so you can put the phone
   down instead of watching it), or **Off** for a visual-only drill. Spoken cues
   ride the same audio session, so they duck music exactly as the beep does.
+- **Optional haptic cue.** A vibration on each call, independent of the audio
+  mode. Pair it with **Off** to drill silently in a shared space, or add it to
+  Beep/Voice for a cue you can feel as well as hear.
+- **Get-ready countdown.** A configurable lead-in (default 3s) counted off
+  before the first corner lights, so you can take your stance instead of being
+  caught flat-footed. Each second is cued like a switch is, and it can be set to
+  Off to start immediately.
 - **Session countdown.** The workout runs for a set number of minutes, then
   stops with a "session complete" cue - or drill untimed ("No limit"), where the
   clock counts up and the session ends only when you stop it.
 - **Distance-aware dwell.** A called corner stays lit for the configured
   interval plus up to 15% extra for the longest cross-court move, so distant
   targets stay reachable without slowing the whole drill down.
+- **Unpredictable cadence.** An optional random variation either side of the
+  interval, so you cannot settle into the rhythm and pre-move before the corner
+  lights. It is symmetric, so the average cadence - and the rep count a session
+  delivers - still matches the interval you set.
 - **Configurable settings** (persisted between launches, and re-validated on
   load so a stored value that is out of range can never drive a session):
   - Time between switches (0.5-10s, in tenths of a second)
+  - Cadence variation (0-50%, 0 = exact)
   - Session length (30s-15 min, or no limit)
   - Corners in play (any subset, minimum one)
   - Switch order: random (no immediate repeats) or sequential
   - Audio cue: beep, voice (spoken corner number), or off
+  - Vibrate on switch on/off
+  - Get-ready countdown (0-10s, 0 = off)
 - **Session stats.** A live rep count and an estimate of the court distance
   covered, shown during the drill and kept on the completion screen. The
   distance assumes each rep goes out to the called corner and back to centre,
@@ -50,6 +64,8 @@ than stopping it.
   audio-session ducking
 - [`expo-speech`](https://docs.expo.dev/versions/latest/sdk/speech/) for spoken
   corner callouts
+- [`expo-haptics`](https://docs.expo.dev/versions/latest/sdk/haptics/) for the
+  optional vibration cue
 - [`expo-keep-awake`](https://docs.expo.dev/versions/latest/sdk/keep-awake/) to
   keep the screen on during a session
 - [`expo-image`](https://docs.expo.dev/versions/latest/sdk/image/) for the court
@@ -79,6 +95,7 @@ code with the Expo Go / a dev client app on your phone.
 
 1. Start your music in Spotify / SoundCloud / Apple Music first.
 2. Open the app, adjust settings if needed, and tap **Start Session**.
+   Take your stance during the get-ready countdown.
 3. Move to whichever corner is highlighted, then recover to the centre. Repeat
    until the countdown ends.
 
@@ -98,9 +115,9 @@ src/
     useTrainer.ts   Drift-free timing engine (switches + countdown)
   store/
     settings.ts     Persisted settings (Zustand + AsyncStorage)
-  audio.ts          Audio session config + cue triggers
+  cues.ts           Audio session config + beep / voice / haptic cues
   corners.ts        Corner definitions, selection + per-rep distance
-  format.ts         Clock / interval / duration / distance formatting
+  format.ts         Clock / cadence / duration / distance formatting
   theme.ts          Design tokens
 assets/
   images/           court.png (court backdrop)

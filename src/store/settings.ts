@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { CueMode } from '@/audio';
+import type { CueMode } from '@/cues';
 import {
   ALL_CORNER_NUMBERS,
   MIN_ENABLED_CORNERS,
@@ -20,8 +20,21 @@ export type Settings = {
    * back on restores the previously chosen length.
    */
   sessionUntimed: boolean;
+  /**
+   * Random variation applied to each hold, as a percentage of the configured
+   * interval. Symmetric, so the average cadence still matches the setting.
+   * Zero makes every hold exactly as configured.
+   */
+  switchJitterPct: number;
   /** How each switch is announced: beep, spoken corner number, or nothing. */
   cueMode: CueMode;
+  /** Whether each switch also fires a haptic pulse, independent of `cueMode`. */
+  hapticCueEnabled: boolean;
+  /**
+   * Seconds counted down before the first corner lights, so you can get set.
+   * Zero starts the drill immediately.
+   */
+  leadInSec: number;
   /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
   /**
@@ -36,13 +49,18 @@ export type Settings = {
 export const SETTINGS_LIMITS = {
   switchIntervalSec: { min: 0.5, max: 10, step: 0.1 },
   sessionDurationSec: { min: 30, max: 900, step: 1 },
+  switchJitterPct: { min: 0, max: 50, step: 5 },
+  leadInSec: { min: 0, max: 10, step: 1 },
 } as const;
 
 export const DEFAULT_SETTINGS: Settings = {
   switchIntervalSec: 2.5,
   sessionDurationSec: 120,
   sessionUntimed: false,
+  switchJitterPct: 0,
   cueMode: 'beep',
+  hapticCueEnabled: false,
+  leadInSec: 3,
   order: 'random',
   enabledCorners: ALL_CORNER_NUMBERS,
 };
@@ -65,6 +83,18 @@ export function normalizeSwitchInterval(value: unknown): number {
 export function normalizeSessionDuration(value: unknown): number {
   if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.sessionDurationSec;
   const { min, max } = SETTINGS_LIMITS.sessionDurationSec;
+  return clamp(Math.round(value), min, max);
+}
+
+export function normalizeJitterPct(value: unknown): number {
+  if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.switchJitterPct;
+  const { min, max } = SETTINGS_LIMITS.switchJitterPct;
+  return clamp(Math.round(value), min, max);
+}
+
+export function normalizeLeadIn(value: unknown): number {
+  if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.leadInSec;
+  const { min, max } = SETTINGS_LIMITS.leadInSec;
   return clamp(Math.round(value), min, max);
 }
 
@@ -104,7 +134,10 @@ type SettingsState = Settings & {
   setSwitchInterval: (value: number) => void;
   setSessionDuration: (value: number) => void;
   setSessionUntimed: (value: boolean) => void;
+  setSwitchJitterPct: (value: number) => void;
   setCueMode: (value: CueMode) => void;
+  setHapticCueEnabled: (value: boolean) => void;
+  setLeadIn: (value: number) => void;
   setOrder: (value: SwitchOrder) => void;
   /** No-op when it would drop below `MIN_ENABLED_CORNERS`. */
   toggleCorner: (number: number) => void;
@@ -122,7 +155,11 @@ export const useSettings = create<SettingsState>()(
       setSessionDuration: (value) =>
         set({ sessionDurationSec: normalizeSessionDuration(value) }),
       setSessionUntimed: (value) => set({ sessionUntimed: value }),
+      setSwitchJitterPct: (value) =>
+        set({ switchJitterPct: normalizeJitterPct(value) }),
       setCueMode: (value) => set({ cueMode: value }),
+      setHapticCueEnabled: (value) => set({ hapticCueEnabled: value }),
+      setLeadIn: (value) => set({ leadInSec: normalizeLeadIn(value) }),
       setOrder: (value) => set({ order: value }),
       toggleCorner: (number) =>
         set((state) => {
@@ -148,14 +185,20 @@ export const useSettings = create<SettingsState>()(
         switchIntervalSec,
         sessionDurationSec,
         sessionUntimed,
+        switchJitterPct,
         cueMode,
+        hapticCueEnabled,
+        leadInSec,
         order,
         enabledCorners,
       }) => ({
         switchIntervalSec,
         sessionDurationSec,
         sessionUntimed,
+        switchJitterPct,
         cueMode,
+        hapticCueEnabled,
+        leadInSec,
         order,
         enabledCorners,
       }),
@@ -191,7 +234,13 @@ export const useSettings = create<SettingsState>()(
             merged.sessionUntimed,
             DEFAULT_SETTINGS.sessionUntimed,
           ),
+          switchJitterPct: normalizeJitterPct(merged.switchJitterPct),
           cueMode: normalizeCueMode(merged.cueMode),
+          hapticCueEnabled: normalizeFlag(
+            merged.hapticCueEnabled,
+            DEFAULT_SETTINGS.hapticCueEnabled,
+          ),
+          leadInSec: normalizeLeadIn(merged.leadInSec),
           order: normalizeOrder(merged.order),
           enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
         };

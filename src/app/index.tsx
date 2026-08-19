@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CUE_MODE_LABELS } from '@/audio';
+import { CUE_MODE_LABELS } from '@/cues';
 import { CORNERS, isCornerEnabled, ORDER_LABELS } from '@/corners';
-import { formatDurationLabel, formatInterval } from '@/format';
+import { formatCadence, formatDurationLabel, formatLeadIn } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -13,7 +13,10 @@ export default function HomeScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
+  const switchJitterPct = useSettings((s) => s.switchJitterPct);
   const cueMode = useSettings((s) => s.cueMode);
+  const hapticCueEnabled = useSettings((s) => s.hapticCueEnabled);
+  const leadInSec = useSettings((s) => s.leadInSec);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const hasHydrated = useSettings((s) => s.hasHydrated);
@@ -52,7 +55,7 @@ export default function HomeScreen() {
         <View style={styles.summary}>
           <SummaryRow
             label="Switch every"
-            value={formatInterval(switchIntervalSec)}
+            value={formatCadence(switchIntervalSec, switchJitterPct)}
           />
           <SummaryRow
             label="Session length"
@@ -61,12 +64,20 @@ export default function HomeScreen() {
             }
           />
           <SummaryRow
+            label="Get-ready countdown"
+            value={formatLeadIn(leadInSec)}
+          />
+          <SummaryRow
             label="Order"
             value={ORDER_LABELS[order]}
           />
           <SummaryRow
             label="Audio cue"
-            value={CUE_MODE_LABELS[cueMode]}
+            value={
+              hapticCueEnabled
+                ? `${CUE_MODE_LABELS[cueMode]} + vibrate`
+                : CUE_MODE_LABELS[cueMode]
+            }
           />
         </View>
 

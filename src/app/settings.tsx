@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CUE_MODE_LABELS, type CueMode } from '@/audio';
+import { CUE_MODE_LABELS, type CueMode } from '@/cues';
 import {
   CORNERS,
   isCornerEnabled,
@@ -18,7 +18,12 @@ import {
   ORDER_LABELS,
   type SwitchOrder,
 } from '@/corners';
-import { formatClock, formatInterval } from '@/format';
+import {
+  formatClock,
+  formatInterval,
+  formatJitter,
+  formatLeadIn,
+} from '@/format';
 import { SETTINGS_LIMITS, useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -26,7 +31,10 @@ export default function SettingsScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
+  const switchJitterPct = useSettings((s) => s.switchJitterPct);
   const cueMode = useSettings((s) => s.cueMode);
+  const hapticCueEnabled = useSettings((s) => s.hapticCueEnabled);
+  const leadInSec = useSettings((s) => s.leadInSec);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
   const toggleCorner = useSettings((s) => s.toggleCorner);
@@ -34,7 +42,10 @@ export default function SettingsScreen() {
   const setSwitchInterval = useSettings((s) => s.setSwitchInterval);
   const setSessionDuration = useSettings((s) => s.setSessionDuration);
   const setSessionUntimed = useSettings((s) => s.setSessionUntimed);
+  const setSwitchJitterPct = useSettings((s) => s.setSwitchJitterPct);
   const setCueMode = useSettings((s) => s.setCueMode);
+  const setHapticCueEnabled = useSettings((s) => s.setHapticCueEnabled);
+  const setLeadIn = useSettings((s) => s.setLeadIn);
   const setOrder = useSettings((s) => s.setOrder);
   const reset = useSettings((s) => s.reset);
 
@@ -50,6 +61,17 @@ export default function SettingsScreen() {
           max={SETTINGS_LIMITS.switchIntervalSec.max}
           step={SETTINGS_LIMITS.switchIntervalSec.step}
           onChange={setSwitchInterval}
+        />
+
+        <SliderControl
+          label="Cadence variation"
+          help="Randomly varies each hold either side of the interval, so you cannot settle into the rhythm and pre-move. Off keeps every hold exact."
+          value={switchJitterPct}
+          format={formatJitter}
+          min={SETTINGS_LIMITS.switchJitterPct.min}
+          max={SETTINGS_LIMITS.switchJitterPct.max}
+          step={SETTINGS_LIMITS.switchJitterPct.step}
+          onChange={setSwitchJitterPct}
         />
 
         <SliderControl
@@ -109,6 +131,17 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        <SliderControl
+          label="Get-ready countdown"
+          help="Counted off before the first corner lights, so you can take your stance. Set to Off to start immediately."
+          value={leadInSec}
+          format={formatLeadIn}
+          min={SETTINGS_LIMITS.leadInSec.min}
+          max={SETTINGS_LIMITS.leadInSec.max}
+          step={SETTINGS_LIMITS.leadInSec.step}
+          onChange={setLeadIn}
+        />
+
         <View style={styles.card}>
           <View style={styles.rowText}>
             <Text style={styles.label}>Switch order</Text>
@@ -137,6 +170,21 @@ export default function SettingsScreen() {
             value={cueMode}
             onChange={setCueMode}
           />
+          <View style={styles.toggleRow}>
+            <View style={styles.rowText}>
+              <Text style={styles.toggleLabel}>Vibrate on switch</Text>
+              <Text style={styles.help}>
+                Adds a haptic pulse to each call, independent of the audio cue.
+                Pair it with Off to drill silently in a shared space.
+              </Text>
+            </View>
+            <Switch
+              value={hapticCueEnabled}
+              onValueChange={setHapticCueEnabled}
+              trackColor={{ true: Colors.accent, false: Colors.border }}
+              thumbColor={Colors.text}
+            />
+          </View>
         </View>
 
         <Pressable
