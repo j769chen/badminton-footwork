@@ -25,6 +25,19 @@ const COUNTDOWN_TICK_MS = 50;
  */
 const DISTANCE_TIME_FACTOR = 0.15;
 
+/**
+ * Scatter `holdMs` by up to `jitterPct` percent either side, so the cadence
+ * cannot be anticipated. Symmetric, so the mean hold equals the configured
+ * interval and a session delivers the rep count the settings imply. Floored at
+ * one tick because the loop cannot resolve a shorter hold anyway.
+ */
+function applyJitter(holdMs: number, jitterPct: number): number {
+  if (jitterPct <= 0) return holdMs;
+  const fraction = jitterPct / 100;
+  const scale = 1 + (Math.random() * 2 - 1) * fraction;
+  return Math.max(TICK_MS, holdMs * scale);
+}
+
 function cuePreferences(): CuePreferences {
   const { cueMode, hapticCueEnabled } = useSettings.getState();
   return { mode: cueMode, haptic: hapticCueEnabled };
@@ -67,6 +80,7 @@ export function useTrainer(cues: Cues): Trainer {
   const endAtRef = useRef(0);
   const nextSwitchAtRef = useRef(0);
   const intervalMsRef = useRef(0);
+  const jitterPctRef = useRef(0);
   const activeRef = useRef<Corner | null>(null);
   const untimedRef = useRef(false);
   // Time remaining until the next switch, captured while paused.
@@ -101,9 +115,10 @@ export function useTrainer(cues: Cues): Trainer {
     activeRef.current = next;
     setActiveCorner(next);
     cueSwitch(next);
-    return (
+    return applyJitter(
       intervalMsRef.current *
-      (1 + DISTANCE_TIME_FACTOR * normalizedTravel(prev, next))
+        (1 + DISTANCE_TIME_FACTOR * normalizedTravel(prev, next)),
+      jitterPctRef.current,
     );
   }, [cueSwitch]);
 
@@ -144,6 +159,7 @@ export function useTrainer(cues: Cues): Trainer {
       switchIntervalSec,
       sessionDurationSec,
       sessionUntimed,
+      switchJitterPct,
       order,
       enabledCorners,
     } = useSettings.getState();
@@ -151,7 +167,8 @@ export function useTrainer(cues: Cues): Trainer {
     const now = Date.now();
 
     intervalMsRef.current = intervalMs;
-    nextSwitchAtRef.current = now + intervalMs;
+    jitterPctRef.current = switchJitterPct;
+    nextSwitchAtRef.current = now + applyJitter(intervalMs, switchJitterPct);
     activeRef.current = null;
     untimedRef.current = sessionUntimed;
     segmentStartRef.current = now;
@@ -173,7 +190,9 @@ export function useTrainer(cues: Cues): Trainer {
     }
 
     // Immediately show (and cue) the first corner. With no previous target the
-    // travel distance is zero, so it holds for exactly the base interval.
+    // travel distance is zero, so its hold is the base interval, jittered - the
+    // user knows when they pressed Start, so an exact first hold would be the
+    // easiest of all to anticipate.
     const first = pickNext(null, order, enabledCorners);
     activeRef.current = first;
     setActiveCorner(first);

@@ -34,9 +34,14 @@ than stopping it.
 - **Distance-aware dwell.** A called corner stays lit for the configured
   interval plus up to 15% extra for the longest cross-court move, so distant
   targets stay reachable without slowing the whole drill down.
+- **Unpredictable cadence.** An optional random variation either side of the
+  interval, so you cannot settle into the rhythm and pre-move before the corner
+  lights. It is symmetric, so the average cadence - and the rep count a session
+  delivers - still matches the interval you set.
 - **Configurable settings** (persisted between launches, and re-validated on
   load so a stored value that is out of range can never drive a session):
   - Time between switches (0.5-10s, in tenths of a second)
+  - Cadence variation (0-50%, 0 = exact)
   - Session length (30s-15 min, or no limit)
   - Corners in play (any subset, minimum one)
   - Switch order: random (no immediate repeats) or sequential
@@ -106,7 +111,7 @@ src/
     settings.ts     Persisted settings (Zustand + AsyncStorage)
   cues.ts           Audio session config + beep / voice / haptic cues
   corners.ts        Corner definitions + next-corner selection
-  format.ts         Clock / interval / duration / lead-in label formatting
+  format.ts         Clock / cadence / duration / lead-in formatting
   theme.ts          Design tokens
 assets/
   images/           court.png (court backdrop)

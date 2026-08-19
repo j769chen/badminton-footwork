@@ -16,6 +16,18 @@ export function formatInterval(seconds: number): string {
   return `${seconds.toFixed(1)}s`;
 }
 
+/** Jitter amount, e.g. "±20%", or "Off" when the cadence is exact. */
+export function formatJitter(percent: number): string {
+  return percent <= 0 ? 'Off' : `±${Math.round(percent)}%`;
+}
+
+/** Switch cadence with any jitter, e.g. "2.5s" or "2.5s ±20%". */
+export function formatCadence(seconds: number, jitterPercent: number): string {
+  return jitterPercent > 0
+    ? `${formatInterval(seconds)} ${formatJitter(jitterPercent)}`
+    : formatInterval(seconds);
+}
+
 /** Lead-in length, e.g. "3s", or "Off" when there is no countdown. */
 export function formatLeadIn(seconds: number): string {
   return seconds <= 0 ? 'Off' : `${Math.round(seconds)}s`;
