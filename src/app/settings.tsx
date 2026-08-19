@@ -18,7 +18,7 @@ import {
   ORDER_LABELS,
   type SwitchOrder,
 } from '@/corners';
-import { formatClock, formatInterval } from '@/format';
+import { formatClock, formatInterval, formatJitter } from '@/format';
 import { SETTINGS_LIMITS, useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -26,6 +26,7 @@ export default function SettingsScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
+  const switchJitterPct = useSettings((s) => s.switchJitterPct);
   const cueMode = useSettings((s) => s.cueMode);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
@@ -34,6 +35,7 @@ export default function SettingsScreen() {
   const setSwitchInterval = useSettings((s) => s.setSwitchInterval);
   const setSessionDuration = useSettings((s) => s.setSessionDuration);
   const setSessionUntimed = useSettings((s) => s.setSessionUntimed);
+  const setSwitchJitterPct = useSettings((s) => s.setSwitchJitterPct);
   const setCueMode = useSettings((s) => s.setCueMode);
   const setOrder = useSettings((s) => s.setOrder);
   const reset = useSettings((s) => s.reset);
@@ -50,6 +52,17 @@ export default function SettingsScreen() {
           max={SETTINGS_LIMITS.switchIntervalSec.max}
           step={SETTINGS_LIMITS.switchIntervalSec.step}
           onChange={setSwitchInterval}
+        />
+
+        <SliderControl
+          label="Cadence variation"
+          help="Randomly varies each hold either side of the interval, so you cannot settle into the rhythm and pre-move. Off keeps every hold exact."
+          value={switchJitterPct}
+          format={formatJitter}
+          min={SETTINGS_LIMITS.switchJitterPct.min}
+          max={SETTINGS_LIMITS.switchJitterPct.max}
+          step={SETTINGS_LIMITS.switchJitterPct.step}
+          onChange={setSwitchJitterPct}
         />
 
         <SliderControl

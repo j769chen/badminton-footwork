@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CUE_MODE_LABELS } from '@/audio';
 import { CORNERS, isCornerEnabled, ORDER_LABELS } from '@/corners';
-import { formatDurationLabel, formatInterval } from '@/format';
+import { formatCadence, formatDurationLabel } from '@/format';
 import { useSettings } from '@/store/settings';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -13,6 +13,7 @@ export default function HomeScreen() {
   const switchIntervalSec = useSettings((s) => s.switchIntervalSec);
   const sessionDurationSec = useSettings((s) => s.sessionDurationSec);
   const sessionUntimed = useSettings((s) => s.sessionUntimed);
+  const switchJitterPct = useSettings((s) => s.switchJitterPct);
   const cueMode = useSettings((s) => s.cueMode);
   const order = useSettings((s) => s.order);
   const enabledCorners = useSettings((s) => s.enabledCorners);
@@ -52,7 +53,7 @@ export default function HomeScreen() {
         <View style={styles.summary}>
           <SummaryRow
             label="Switch every"
-            value={formatInterval(switchIntervalSec)}
+            value={formatCadence(switchIntervalSec, switchJitterPct)}
           />
           <SummaryRow
             label="Session length"
