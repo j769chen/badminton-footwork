@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCues } from '@/audio';
 import { Court } from '@/components/Court';
-import { formatClock } from '@/format';
+import { formatClock, formatDistance } from '@/format';
 import { useTrainer } from '@/hooks/useTrainer';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -21,6 +21,8 @@ export default function TrainScreen() {
     remainingMs,
     totalMs,
     elapsedMs,
+    reps,
+    distanceMetres,
     untimed,
     start,
     pause,
@@ -82,6 +84,19 @@ export default function TrainScreen() {
               </Text>
             </>
           )}
+        </View>
+
+        <View style={styles.stats}>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{reps}</Text>
+            <Text style={styles.statLabel}>Reps</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>
+              {formatDistance(distanceMetres)}
+            </Text>
+            <Text style={styles.statLabel}>Distance (est.)</Text>
+          </View>
         </View>
 
         <View style={styles.controls}>
@@ -172,6 +187,22 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
   },
+  stats: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  statValue: { color: Colors.text, fontSize: 22, fontWeight: '800' },
+  statLabel: { color: Colors.textMuted, fontSize: 12, fontWeight: '600' },
   controls: {
     flexDirection: 'row',
     gap: Spacing.md,

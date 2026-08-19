@@ -16,6 +16,13 @@ export function formatInterval(seconds: number): string {
   return `${seconds.toFixed(1)}s`;
 }
 
+/** Distance covered, e.g. "388 m" or "1.21 km". */
+export function formatDistance(metres: number): string {
+  const safe = Math.max(0, metres);
+  if (safe >= 1000) return `${(safe / 1000).toFixed(2)} km`;
+  return `${Math.round(safe)} m`;
+}
+
 /** Human-friendly duration, e.g. "10 min", "1 min 30 s", "45 s". */
 export function formatDurationLabel(totalSeconds: number): string {
   const total = Math.max(0, Math.round(totalSeconds));

@@ -34,6 +34,12 @@ than stopping it.
   - Corners in play (any subset, minimum one)
   - Switch order: random (no immediate repeats) or sequential
   - Audio cue: beep, voice (spoken corner number), or off
+- **Session stats.** A live rep count and an estimate of the court distance
+  covered, shown during the drill and kept on the completion screen. The
+  distance assumes each rep goes out to the called corner and back to centre,
+  scaled by real court dimensions (6.10 m width, 6.70 m half-court depth). It is
+  a nominal figure derived from the corner positions, not a measurement of what
+  you actually ran.
 - **Pause / resume / stop** controls and a keep-awake screen during sessions.
 
 ## Tech stack
@@ -93,8 +99,8 @@ src/
   store/
     settings.ts     Persisted settings (Zustand + AsyncStorage)
   audio.ts          Audio session config + cue triggers
-  corners.ts        Corner definitions + next-corner selection
-  format.ts         Clock / interval / duration label formatting
+  corners.ts        Corner definitions, selection + per-rep distance
+  format.ts         Clock / interval / duration / distance formatting
   theme.ts          Design tokens
 assets/
   images/           court.png (court backdrop)
