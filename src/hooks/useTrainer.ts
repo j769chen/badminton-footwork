@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { Cues } from '@/audio';
 import { normalizedTravel, pickNext, type Corner } from '@/corners';
+import type { CuePreferences, Cues } from '@/cues';
 import { useSettings } from '@/store/settings';
 
-export type TrainerStatus = 'idle' | 'running' | 'paused' | 'complete';
+export type TrainerStatus =
+  | 'idle'
+  | 'countdown'
+  | 'running'
+  | 'paused'
+  | 'complete';
 
 const TICK_MS = 200;
+
+/** Finer than `TICK_MS` so the counted seconds land close to the boundary. */
+const COUNTDOWN_TICK_MS = 50;
 
 /**
  * Extra dwell time granted to the longest possible movement, as a fraction of
@@ -20,15 +28,19 @@ const DISTANCE_TIME_FACTOR = 0.15;
 /**
  * Scatter `holdMs` by up to `jitterPct` percent either side, so the cadence
  * cannot be anticipated. Symmetric, so the mean hold equals the configured
- * interval
- * and a session delivers the rep count the settings imply. Floored at one tick
- * because the loop cannot resolve a shorter hold anyway.
+ * interval and a session delivers the rep count the settings imply. Floored at
+ * one tick because the loop cannot resolve a shorter hold anyway.
  */
 function applyJitter(holdMs: number, jitterPct: number): number {
   if (jitterPct <= 0) return holdMs;
   const fraction = jitterPct / 100;
   const scale = 1 + (Math.random() * 2 - 1) * fraction;
   return Math.max(TICK_MS, holdMs * scale);
+}
+
+function cuePreferences(): CuePreferences {
+  const { cueMode, hapticCueEnabled } = useSettings.getState();
+  return { mode: cueMode, haptic: hapticCueEnabled };
 }
 
 type Trainer = {
@@ -41,6 +53,8 @@ type Trainer = {
   elapsedMs: number;
   /** True when the session has no time limit (counts up, never auto-finishes). */
   untimed: boolean;
+  /** Seconds still to count off during the pre-session lead-in. */
+  countdownSecondsLeft: number;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -59,6 +73,7 @@ export function useTrainer(cues: Cues): Trainer {
   const [totalMs, setTotalMs] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [untimed, setUntimed] = useState(false);
+  const [countdownSecondsLeft, setCountdownSecondsLeft] = useState(0);
 
   // Mutable timing anchors (avoid stale closures inside the tick loop).
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -73,6 +88,10 @@ export function useTrainer(cues: Cues): Trainer {
   // Anchors for the count-up elapsed clock (which excludes paused time).
   const segmentStartRef = useRef(0);
   const elapsedBeforeRef = useRef(0);
+  // Lead-in anchors. The countdown reuses `tickRef`, since it never overlaps
+  // the session loop.
+  const countdownEndAtRef = useRef(0);
+  const countdownAnnouncedRef = useRef(0);
 
   const clearTick = useCallback(() => {
     if (tickRef.current !== null) {
@@ -83,7 +102,7 @@ export function useTrainer(cues: Cues): Trainer {
 
   const cueSwitch = useCallback(
     (corner: Corner) => {
-      cues.announceSwitch(useSettings.getState().cueMode, corner.number);
+      cues.announceSwitch(cuePreferences(), corner.number);
     },
     [cues],
   );
@@ -109,7 +128,7 @@ export function useTrainer(cues: Cues): Trainer {
     setActiveCorner(null);
     activeRef.current = null;
     setStatus('complete');
-    cues.announceComplete(useSettings.getState().cueMode);
+    cues.announceComplete(cuePreferences());
   }, [cues, clearTick]);
 
   const tick = useCallback(() => {
@@ -135,7 +154,7 @@ export function useTrainer(cues: Cues): Trainer {
     tickRef.current = setInterval(tick, TICK_MS);
   }, [clearTick, tick]);
 
-  const start = useCallback(() => {
+  const beginSession = useCallback(() => {
     const {
       switchIntervalSec,
       sessionDurationSec,
@@ -179,9 +198,42 @@ export function useTrainer(cues: Cues): Trainer {
     setActiveCorner(first);
     cueSwitch(first);
 
+    setCountdownSecondsLeft(0);
     setStatus('running');
     startTick();
   }, [cueSwitch, startTick]);
+
+  const countdownTick = useCallback(() => {
+    const remaining = countdownEndAtRef.current - Date.now();
+    if (remaining <= 0) {
+      clearTick();
+      beginSession();
+      return;
+    }
+    const secondsLeft = Math.ceil(remaining / 1000);
+    if (secondsLeft !== countdownAnnouncedRef.current) {
+      countdownAnnouncedRef.current = secondsLeft;
+      setCountdownSecondsLeft(secondsLeft);
+      cues.announceCountdown(cuePreferences(), secondsLeft);
+    }
+  }, [beginSession, clearTick, cues]);
+
+  const start = useCallback(() => {
+    const { leadInSec } = useSettings.getState();
+    if (leadInSec <= 0) {
+      beginSession();
+      return;
+    }
+    clearTick();
+    countdownEndAtRef.current = Date.now() + leadInSec * 1000;
+    countdownAnnouncedRef.current = leadInSec;
+    setCountdownSecondsLeft(leadInSec);
+    setActiveCorner(null);
+    activeRef.current = null;
+    setStatus('countdown');
+    cues.announceCountdown(cuePreferences(), leadInSec);
+    tickRef.current = setInterval(countdownTick, COUNTDOWN_TICK_MS);
+  }, [beginSession, clearTick, countdownTick, cues]);
 
   const pause = useCallback(() => {
     if (status !== 'running') return;
@@ -220,6 +272,7 @@ export function useTrainer(cues: Cues): Trainer {
     setTotalMs(0);
     setElapsedMs(0);
     elapsedBeforeRef.current = 0;
+    setCountdownSecondsLeft(0);
   }, [clearTick]);
 
   useEffect(() => clearTick, [clearTick]);
@@ -231,6 +284,7 @@ export function useTrainer(cues: Cues): Trainer {
     totalMs,
     elapsedMs,
     untimed,
+    countdownSecondsLeft,
     start,
     pause,
     resume,

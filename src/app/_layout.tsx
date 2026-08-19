@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
-import { configureAudioSession } from '@/audio';
+import { configureAudioSession } from '@/cues';
 import { Colors } from '@/theme';
 
 // Anchor every route to the home screen so deep links / page refreshes (e.g.
