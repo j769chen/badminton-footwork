@@ -16,10 +16,12 @@ export type TrainerStatus =
   | 'paused'
   | 'complete';
 
-const TICK_MS = 200;
-
-/** Finer than `TICK_MS` so the counted seconds land close to the boundary. */
-const COUNTDOWN_TICK_MS = 50;
+/**
+ * Loop resolution. Every hold quantises to this, so it has to stay well under
+ * the 0.5s minimum switch interval; it also keeps the counted-off lead-in
+ * seconds landing close to their boundary.
+ */
+const TICK_MS = 50;
 
 /**
  * Extra dwell time granted to the longest possible movement, as a fraction of
@@ -252,9 +254,13 @@ export function useTrainer(cues: Cues): Trainer {
     activeRef.current = null;
     setReps(0);
     setDistanceMetres(0);
+    setTotalMs(0);
+    setRemainingMs(0);
+    setElapsedMs(0);
+    elapsedBeforeRef.current = 0;
     setStatus('countdown');
     cues.announceCountdown(cuePreferences(), leadInSec);
-    tickRef.current = setInterval(countdownTick, COUNTDOWN_TICK_MS);
+    tickRef.current = setInterval(countdownTick, TICK_MS);
   }, [beginSession, clearTick, countdownTick, cues]);
 
   const pause = useCallback(() => {
