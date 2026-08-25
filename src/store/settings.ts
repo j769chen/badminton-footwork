@@ -10,9 +10,7 @@ import {
 } from '@/corners';
 
 export type Settings = {
-  /** Seconds between corner switches (tenth-of-a-second precision). */
   switchIntervalSec: number;
-  /** Total session length in seconds (countdown) when timed. */
   sessionDurationSec: number;
   /**
    * When true the session has no time limit: it counts up and only ends when
@@ -26,7 +24,6 @@ export type Settings = {
    * Zero makes every hold exactly as configured.
    */
   switchJitterPct: number;
-  /** How each switch is announced: beep, spoken corner number, or nothing. */
   cueMode: CueMode;
   /** Whether each switch also fires a haptic pulse, independent of `cueMode`. */
   hapticCueEnabled: boolean;
@@ -35,7 +32,6 @@ export type Settings = {
    * Zero starts the drill immediately.
    */
   leadInSec: number;
-  /** Random (avoids immediate repeat) or sequential order. */
   order: SwitchOrder;
   /**
    * Corner numbers in play, as shown on the court: always at least
