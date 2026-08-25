@@ -18,11 +18,6 @@ type CourtProps = {
   activeCorner: CornerModel | null;
 };
 
-/**
- * A badminton court (rendered from the court artwork) showing the numbered
- * footwork targets the user has enabled, plus a centre marker the player
- * returns to between movements.
- */
 export function Court({ activeCorner }: CourtProps) {
   const enabledCorners = useSettings((s) => s.enabledCorners);
 

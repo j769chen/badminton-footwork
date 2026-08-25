@@ -6,10 +6,8 @@ import { useMemo } from 'react';
 const beepSource = require('../assets/sounds/beep.wav');
 const completeSource = require('../assets/sounds/complete.wav');
 
-/** How a switch is announced: a neutral beep, a spoken corner number, or nothing. */
 export type CueMode = 'beep' | 'voice' | 'off';
 
-/** Display labels for each cue mode, shared by the home summary and the picker. */
 export const CUE_MODE_LABELS: Record<CueMode, string> = {
   beep: 'Beep',
   voice: 'Voice',
@@ -78,11 +76,8 @@ function vibrate(style: Haptics.ImpactFeedbackStyle) {
 }
 
 export type Cues = {
-  /** Announce `secondsLeft` of the pre-session lead-in. */
   announceCountdown: (prefs: CuePreferences, secondsLeft: number) => void;
-  /** Announce a switch to `cornerNumber`. */
   announceSwitch: (prefs: CuePreferences, cornerNumber: number) => void;
-  /** Announce the end of the session. */
   announceComplete: (prefs: CuePreferences) => void;
 };
 

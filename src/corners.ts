@@ -7,10 +7,8 @@ export type Corner = {
   y: number;
 };
 
-/** Random (avoids immediate repeat) or sequential board order. */
 export type SwitchOrder = 'random' | 'sequential';
 
-/** Display labels for each order, shared by the home summary and the picker. */
 export const ORDER_LABELS: Record<SwitchOrder, string> = {
   random: 'Random',
   sequential: 'Sequential',
@@ -63,7 +61,6 @@ const COURT_DEPTH_M = 6.7;
 const METRES_PER_X = COURT_WIDTH_M / (RIGHT_X - LEFT_X);
 const METRES_PER_Y = COURT_DEPTH_M / (BOTTOM_Y - TOP_Y);
 
-/** The centre the player recovers to between every movement. */
 const CENTRE = { x: 0.5, y: 0.5 };
 
 type Point = { x: number; y: number };
@@ -85,7 +82,6 @@ export function repMetres(corner: Corner): number {
   return 2 * metresBetween(corner, CENTRE);
 }
 
-/** Longest move between any two targets, used to normalise travel to 0..1. */
 export const MAX_CORNER_TRAVEL_M = CORNERS.reduce((max, a) => {
   for (const b of CORNERS) max = Math.max(max, metresBetween(a, b));
   return max;
@@ -114,10 +110,6 @@ export const isCornerEnabled = (
   corner: Corner,
 ): boolean => enabled.includes(corner.number);
 
-/**
- * The corners currently in play, in board order. Unknown numbers are ignored,
- * so the result is always a subset of `CORNERS`.
- */
 export function enabledCornerList(enabled: readonly number[]): Corner[] {
   return CORNERS.filter((corner) => isCornerEnabled(enabled, corner));
 }

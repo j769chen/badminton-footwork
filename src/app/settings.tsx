@@ -226,7 +226,6 @@ type SliderControlProps = {
   /** When true the slider is hidden and the value shows `disabledValueLabel`. */
   disabled?: boolean;
   disabledValueLabel?: string;
-  /** Extra content rendered at the bottom of the card (e.g. a toggle row). */
   footer?: ReactNode;
 };
 

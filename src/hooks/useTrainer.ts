@@ -52,19 +52,16 @@ function cuePreferences(): CuePreferences {
 
 type Trainer = {
   status: TrainerStatus;
-  /** The target currently lit, or null when nothing is in play. */
   activeCorner: Corner | null;
   remainingMs: number;
   totalMs: number;
   /** Time elapsed since the session started (excludes paused time). */
   elapsedMs: number;
-  /** Corners called so far this session. */
   reps: number;
   /** Estimated metres covered so far, assuming a recovery to centre per rep. */
   distanceMetres: number;
   /** True when the session has no time limit (counts up, never auto-finishes). */
   untimed: boolean;
-  /** Seconds still to count off during the pre-session lead-in. */
   countdownSecondsLeft: number;
   start: () => void;
   pause: () => void;
@@ -96,7 +93,6 @@ export function useTrainer(cues: Cues): Trainer {
   const jitterPctRef = useRef(0);
   const activeRef = useRef<Corner | null>(null);
   const untimedRef = useRef(false);
-  // Time remaining until the next switch, captured while paused.
   const pausedSwitchRemainingRef = useRef(0);
   // Anchors for the count-up elapsed clock (which excludes paused time).
   const segmentStartRef = useRef(0);
