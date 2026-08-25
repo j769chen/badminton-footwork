@@ -32,8 +32,11 @@ than stopping it.
   stops with a "session complete" cue - or drill untimed ("No limit"), where the
   clock counts up and the session ends only when you stop it.
 - **Distance-aware dwell.** A called corner stays lit for the configured
-  interval plus up to 15% extra for the longest cross-court move, so distant
-  targets stay reachable without slowing the whole drill down.
+  interval plus up to 15% extra, scaled by how far the move actually is - the
+  full 15% only for the longest diagonal (a front corner to the opposite rear
+  corner). Distance is measured in metres, so a front-to-rear move counts as
+  the deeper move it is rather than being flattened by the court's aspect
+  ratio.
 - **Unpredictable cadence.** An optional random variation either side of the
   interval, so you cannot settle into the rhythm and pre-move before the corner
   lights. It is symmetric, so the average cadence - and the rep count a session
@@ -91,6 +94,20 @@ code with the Expo Go / a dev client app on your phone.
 > (`npx expo run:ios` / `npx expo run:android`) rather than Expo Go for the full
 > audio behaviour.
 
+## Development
+
+```bash
+npm test      # jest-expo; unit tests for the pure logic and the settings store
+npm run lint  # expo lint
+npx tsc --noEmit
+```
+
+The drill logic is deliberately kept free of React so it can be tested
+directly: corner selection and ordering (`corners.ts`), display formatting
+(`format.ts`), and the persisted-settings normalisers and schema migrations
+(`store/settings.ts`) all have unit tests. Anything that reaches for a native
+module lives in `cues.ts`, `useTrainer.ts`, or a component.
+
 ## How to use
 
 1. Start your music in Spotify / SoundCloud / Apple Music first.
@@ -119,6 +136,7 @@ src/
   corners.ts        Corner definitions, selection + per-rep distance
   format.ts         Clock / cadence / duration / distance formatting
   theme.ts          Design tokens
+  *.test.ts         Unit tests, alongside the module they cover
 assets/
   images/           court.png (court backdrop)
   sounds/           beep.wav, complete.wav (generated tones)

@@ -64,8 +64,12 @@ const METRES_PER_X = COURT_WIDTH_M / (RIGHT_X - LEFT_X);
 const METRES_PER_Y = COURT_DEPTH_M / (BOTTOM_Y - TOP_Y);
 
 /** The centre the player recovers to between every movement. */
-const CENTRE_X = 0.5;
-const CENTRE_Y = 0.5;
+const CENTRE = { x: 0.5, y: 0.5 };
+
+type Point = { x: number; y: number };
+
+const metresBetween = (a: Point, b: Point) =>
+  Math.hypot((a.x - b.x) * METRES_PER_X, (a.y - b.y) * METRES_PER_Y);
 
 /**
  * Estimated metres covered by one rep: out from the centre to `corner` and back
@@ -78,31 +82,26 @@ const CENTRE_Y = 0.5;
  * and actually returns to the centre.
  */
 export function repMetres(corner: Corner): number {
-  const dx = (corner.x - CENTRE_X) * METRES_PER_X;
-  const dy = (corner.y - CENTRE_Y) * METRES_PER_Y;
-  return 2 * Math.hypot(dx, dy);
+  return 2 * metresBetween(corner, CENTRE);
 }
 
-const distanceBetween = (a: Corner, b: Corner) =>
-  Math.hypot(a.x - b.x, a.y - b.y);
-
-/** Largest distance between any two targets, used to normalise travel to 0..1. */
-export const MAX_CORNER_DISTANCE = CORNERS.reduce((max, a) => {
-  for (const b of CORNERS) max = Math.max(max, distanceBetween(a, b));
+/** Longest move between any two targets, used to normalise travel to 0..1. */
+export const MAX_CORNER_TRAVEL_M = CORNERS.reduce((max, a) => {
+  for (const b of CORNERS) max = Math.max(max, metresBetween(a, b));
   return max;
 }, 0);
 
 /**
  * How far the player travels from the previous target to the next one,
  * normalised to 0..1 (0 = no previous target / no move, 1 = the longest
- * possible diagonal). Deterministic: depends only on the two positions.
+ * possible move). Deterministic: depends only on the two positions.
  *
  * The scale stays fixed to the full court, so a narrow selection yields
  * proportionally smaller values rather than being re-stretched to 0..1.
  */
 export function normalizedTravel(prev: Corner | null, next: Corner): number {
   if (prev === null || prev === next) return 0;
-  return distanceBetween(prev, next) / MAX_CORNER_DISTANCE;
+  return metresBetween(prev, next) / MAX_CORNER_TRAVEL_M;
 }
 
 /**

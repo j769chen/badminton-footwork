@@ -128,6 +128,58 @@ export function normalizeEnabledCorners(value: unknown): readonly number[] {
   return kept.length >= MIN_ENABLED_CORNERS ? kept : ALL_CORNER_NUMBERS;
 }
 
+/**
+ * Bring a persisted payload up to the current schema. Works on a copy, so a
+ * caller's stored object is never mutated.
+ */
+export function migrateSettings(
+  persisted: unknown,
+  version: number,
+): Partial<Settings> {
+  const state = { ...((persisted ?? {}) as Record<string, unknown>) };
+  // v0 stored session length in minutes as `sessionDurationMin`.
+  if (version < 1 && typeof state.sessionDurationMin === 'number') {
+    state.sessionDurationSec = state.sessionDurationMin * 60;
+    delete state.sessionDurationMin;
+  }
+  // v2 added `enabledCorners`. v1 payloads simply lack the field, which
+  // `normalizeSettings` turns into the full court, so there is nothing to
+  // migrate here.
+  // v3 replaced the `audioCueEnabled` boolean with a three-way `cueMode`.
+  if (version < 3 && typeof state.audioCueEnabled === 'boolean') {
+    state.cueMode = state.audioCueEnabled ? 'beep' : 'off';
+    delete state.audioCueEnabled;
+  }
+  return state as Partial<Settings>;
+}
+
+/**
+ * Force a candidate payload to satisfy every `Settings` invariant. Every
+ * rehydration passes through here, so this is the one place the invariants have
+ * to hold - which is why `pickNext` can trust its pool instead of guarding an
+ * empty one, and why a stored value that is now out of range (or a v0 payload
+ * migrated past `max`) cannot drive a session.
+ */
+export function normalizeSettings(value: Partial<Settings>): Settings {
+  return {
+    switchIntervalSec: normalizeSwitchInterval(value.switchIntervalSec),
+    sessionDurationSec: normalizeSessionDuration(value.sessionDurationSec),
+    sessionUntimed: normalizeFlag(
+      value.sessionUntimed,
+      DEFAULT_SETTINGS.sessionUntimed,
+    ),
+    switchJitterPct: normalizeJitterPct(value.switchJitterPct),
+    cueMode: normalizeCueMode(value.cueMode),
+    hapticCueEnabled: normalizeFlag(
+      value.hapticCueEnabled,
+      DEFAULT_SETTINGS.hapticCueEnabled,
+    ),
+    leadInSec: normalizeLeadIn(value.leadInSec),
+    order: normalizeOrder(value.order),
+    enabledCorners: normalizeEnabledCorners(value.enabledCorners),
+  };
+}
+
 type SettingsState = Settings & {
   hasHydrated: boolean;
   markHydrated: () => void;
@@ -154,13 +206,22 @@ export const useSettings = create<SettingsState>()(
         set({ switchIntervalSec: normalizeSwitchInterval(value) }),
       setSessionDuration: (value) =>
         set({ sessionDurationSec: normalizeSessionDuration(value) }),
-      setSessionUntimed: (value) => set({ sessionUntimed: value }),
+      setSessionUntimed: (value) =>
+        set({
+          sessionUntimed: normalizeFlag(value, DEFAULT_SETTINGS.sessionUntimed),
+        }),
       setSwitchJitterPct: (value) =>
         set({ switchJitterPct: normalizeJitterPct(value) }),
-      setCueMode: (value) => set({ cueMode: value }),
-      setHapticCueEnabled: (value) => set({ hapticCueEnabled: value }),
+      setCueMode: (value) => set({ cueMode: normalizeCueMode(value) }),
+      setHapticCueEnabled: (value) =>
+        set({
+          hapticCueEnabled: normalizeFlag(
+            value,
+            DEFAULT_SETTINGS.hapticCueEnabled,
+          ),
+        }),
       setLeadIn: (value) => set({ leadInSec: normalizeLeadIn(value) }),
-      setOrder: (value) => set({ order: value }),
+      setOrder: (value) => set({ order: normalizeOrder(value) }),
       toggleCorner: (number) =>
         set((state) => {
           const on = state.enabledCorners.includes(number);
@@ -202,49 +263,14 @@ export const useSettings = create<SettingsState>()(
         order,
         enabledCorners,
       }),
-      migrate: (persisted, version) => {
-        const state = (persisted ?? {}) as Record<string, unknown>;
-        // v0 stored session length in minutes as `sessionDurationMin`.
-        if (version < 1 && typeof state.sessionDurationMin === 'number') {
-          state.sessionDurationSec = state.sessionDurationMin * 60;
-          delete state.sessionDurationMin;
-        }
-        // v2 added `enabledCorners`. v1 payloads simply lack the field, which
-        // `merge` below normalises to the full court, so there is nothing to
-        // migrate here.
-        // v3 replaced the `audioCueEnabled` boolean with a three-way `cueMode`.
-        if (version < 3 && typeof state.audioCueEnabled === 'boolean') {
-          state.cueMode = state.audioCueEnabled ? 'beep' : 'off';
-          delete state.audioCueEnabled;
-        }
-        return state as Partial<Settings>;
-      },
-      // Every rehydration passes through here, so this is the one place the
-      // `Settings` invariants have to hold - which is why `pickNext` can trust
-      // its pool instead of guarding an empty one, and why a stored value that
-      // is now out of range (or a v0 payload migrated past `max`) cannot drive
-      // a session.
-      merge: (persisted, current) => {
-        const merged = { ...current, ...(persisted as Partial<Settings>) };
-        return {
-          ...merged,
-          switchIntervalSec: normalizeSwitchInterval(merged.switchIntervalSec),
-          sessionDurationSec: normalizeSessionDuration(merged.sessionDurationSec),
-          sessionUntimed: normalizeFlag(
-            merged.sessionUntimed,
-            DEFAULT_SETTINGS.sessionUntimed,
-          ),
-          switchJitterPct: normalizeJitterPct(merged.switchJitterPct),
-          cueMode: normalizeCueMode(merged.cueMode),
-          hapticCueEnabled: normalizeFlag(
-            merged.hapticCueEnabled,
-            DEFAULT_SETTINGS.hapticCueEnabled,
-          ),
-          leadInSec: normalizeLeadIn(merged.leadInSec),
-          order: normalizeOrder(merged.order),
-          enabledCorners: normalizeEnabledCorners(merged.enabledCorners),
-        };
-      },
+      migrate: migrateSettings,
+      merge: (persisted, current) => ({
+        ...current,
+        ...normalizeSettings({
+          ...current,
+          ...(persisted as Partial<Settings>),
+        }),
+      }),
       onRehydrateStorage: () => (state) => {
         state?.markHydrated();
       },
