@@ -25,7 +25,13 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <Text style={styles.title}>Badminton{'\n'}Footwork Trainer</Text>
+          <Text
+            accessibilityRole="header"
+            accessibilityLabel="Badminton Footwork Trainer"
+            style={styles.title}
+          >
+            Badminton{'\n'}Footwork Trainer
+          </Text>
           <Text style={styles.subtitle}>
             React to the highlighted corner, move, and recover to the centre.
           </Text>
@@ -39,6 +45,10 @@ export default function HomeScreen() {
             return (
               <View
                 key={corner.number}
+                accessible
+                accessibilityLabel={`Corner ${corner.number}, ${corner.label}, ${
+                  enabled ? 'in play' : 'not in play'
+                }`}
                 style={[styles.previewItem, !enabled && styles.previewItemOff]}
               >
                 <View
@@ -84,6 +94,11 @@ export default function HomeScreen() {
         <View style={styles.actions}>
           <View style={styles.buttonRow}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                hasHydrated ? 'Start session' : 'Loading saved settings'
+              }
+              accessibilityState={{ disabled: !hasHydrated }}
               disabled={!hasHydrated}
               style={({ pressed }) => [
                 styles.startButton,
@@ -117,7 +132,11 @@ export default function HomeScreen() {
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.summaryRow}>
+    <View
+      accessible
+      accessibilityLabel={`${label}: ${value}`}
+      style={styles.summaryRow}
+    >
       <Text style={styles.summaryLabel}>{label}</Text>
       <Text style={styles.summaryValue}>{value}</Text>
     </View>

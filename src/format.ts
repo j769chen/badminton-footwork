@@ -23,6 +23,17 @@ export function formatDistance(metres: number): string {
   return `${Math.round(safe)} m`;
 }
 
+/**
+ * Distance spelled out for a screen reader, e.g. "388 metres" or
+ * "1.21 kilometres". `formatDistance`'s "m" / "km" are read as bare letters.
+ */
+export function formatDistanceLabel(metres: number): string {
+  const safe = Math.max(0, metres);
+  if (safe >= 1000) return `${(safe / 1000).toFixed(2)} kilometres`;
+  const whole = Math.round(safe);
+  return `${whole} ${whole === 1 ? 'metre' : 'metres'}`;
+}
+
 /** Jitter amount, e.g. "±20%", or "Off" when the cadence is exact. */
 export function formatJitter(percent: number): string {
   return percent <= 0 ? 'Off' : `±${Math.round(percent)}%`;

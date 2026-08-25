@@ -28,7 +28,15 @@ export function Court({ activeCorner }: CourtProps) {
 
   return (
     <View style={styles.outer}>
-      <View style={styles.court}>
+      <View
+        accessible
+        accessibilityLabel={
+          activeCorner
+            ? `Court. Corner ${activeCorner.number}, ${activeCorner.label}, is lit.`
+            : 'Court. No corner lit.'
+        }
+        style={styles.court}
+      >
         <Image
           source={courtImage}
           style={StyleSheet.absoluteFill}
