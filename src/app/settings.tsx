@@ -20,6 +20,7 @@ import {
 } from '@/corners';
 import {
   formatClock,
+  formatDurationLabel,
   formatInterval,
   formatJitter,
   formatLeadIn,
@@ -79,6 +80,7 @@ export default function SettingsScreen() {
           help="The workout stops when this countdown reaches zero. Adjustable to the second."
           value={sessionDurationSec}
           format={formatClock}
+          formatLabel={formatDurationLabel}
           min={SETTINGS_LIMITS.sessionDurationSec.min}
           max={SETTINGS_LIMITS.sessionDurationSec.max}
           step={SETTINGS_LIMITS.sessionDurationSec.step}
@@ -95,6 +97,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <Switch
+                accessibilityLabel="No time limit"
                 value={sessionUntimed}
                 onValueChange={setSessionUntimed}
                 trackColor={{ true: Colors.accent, false: Colors.border }}
@@ -106,7 +109,9 @@ export default function SettingsScreen() {
 
         <View style={styles.card}>
           <View style={styles.rowText}>
-            <Text style={styles.label}>Corners in play</Text>
+            <Text accessibilityRole="header" style={styles.label}>
+              Corners in play
+            </Text>
             <Text style={styles.help}>
               Only the selected corners are called out. Pick one to drill a
               single corner over and over.
@@ -144,12 +149,15 @@ export default function SettingsScreen() {
 
         <View style={styles.card}>
           <View style={styles.rowText}>
-            <Text style={styles.label}>Switch order</Text>
+            <Text accessibilityRole="header" style={styles.label}>
+              Switch order
+            </Text>
             <Text style={styles.help}>
               Random avoids repeating the same corner twice in a row.
             </Text>
           </View>
           <Segmented<SwitchOrder>
+            groupLabel="Switch order"
             labels={ORDER_LABELS}
             value={order}
             onChange={setOrder}
@@ -158,7 +166,9 @@ export default function SettingsScreen() {
 
         <View style={styles.card}>
           <View style={styles.rowText}>
-            <Text style={styles.label}>Audio cue</Text>
+            <Text accessibilityRole="header" style={styles.label}>
+              Audio cue
+            </Text>
             <Text style={styles.help}>
               Beep plays a short tone. Voice calls the corner number out loud so
               you can drill without watching the screen. Off is a visual-only
@@ -166,6 +176,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Segmented<CueMode>
+            groupLabel="Audio cue"
             labels={CUE_MODE_LABELS}
             value={cueMode}
             onChange={setCueMode}
@@ -179,6 +190,7 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Switch
+              accessibilityLabel="Vibrate on switch"
               value={hapticCueEnabled}
               onValueChange={setHapticCueEnabled}
               trackColor={{ true: Colors.accent, false: Colors.border }}
@@ -188,6 +200,8 @@ export default function SettingsScreen() {
         </View>
 
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Reset all settings to defaults"
           style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
           onPress={reset}
         >
@@ -203,6 +217,8 @@ type SliderControlProps = {
   help: string;
   value: number;
   format: (value: number) => string;
+  /** Spoken form of the value, when `format` does not read well aloud. */
+  formatLabel?: (value: number) => string;
   min: number;
   max: number;
   step: number;
@@ -219,6 +235,7 @@ function SliderControl({
   help,
   value,
   format,
+  formatLabel,
   min,
   max,
   step,
@@ -246,9 +263,17 @@ function SliderControl({
     onChange(next);
   };
 
+  const spoken = disabled
+    ? (disabledValueLabel ?? 'unset')
+    : (formatLabel ?? format)(local);
+
   return (
     <View style={styles.card}>
-      <View style={styles.rowBetween}>
+      <View
+        accessible
+        accessibilityLabel={`${label}, ${spoken}`}
+        style={styles.rowBetween}
+      >
         <View style={styles.rowText}>
           <Text style={styles.label}>{label}</Text>
         </View>
@@ -262,11 +287,15 @@ function SliderControl({
         <View style={styles.sliderRow}>
           <StepButton
             symbol="-"
+            action="Decrease"
+            settingLabel={label}
             disabled={local <= min}
             onPress={() => commit(local - step)}
           />
           <Slider
             style={styles.slider}
+            accessibilityLabel={label}
+            accessibilityValue={{ text: spoken }}
             minimumValue={min}
             maximumValue={max}
             step={step}
@@ -279,6 +308,8 @@ function SliderControl({
           />
           <StepButton
             symbol="+"
+            action="Increase"
+            settingLabel={label}
             disabled={local >= max}
             onPress={() => commit(local + step)}
           />
@@ -292,15 +323,22 @@ function SliderControl({
 
 function StepButton({
   symbol,
+  action,
+  settingLabel,
   disabled,
   onPress,
 }: {
   symbol: string;
+  action: 'Increase' | 'Decrease';
+  settingLabel: string;
   disabled: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${action} ${settingLabel.toLowerCase()}`}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       hitSlop={8}
@@ -355,22 +393,31 @@ function CornerCheckbox({
 }
 
 function Segmented<T extends string>({
+  groupLabel,
   labels,
   value,
   onChange,
 }: {
+  groupLabel: string;
   labels: Record<T, string>;
   value: T;
   onChange: (value: T) => void;
 }) {
   const options = Object.entries(labels) as [T, string][];
   return (
-    <View style={styles.segmented}>
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel={groupLabel}
+      style={styles.segmented}
+    >
       {options.map(([key, label]) => {
         const selected = key === value;
         return (
           <Pressable
             key={key}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selected }}
+            accessibilityLabel={label}
             onPress={() => onChange(key)}
             style={[styles.segment, selected && styles.segmentSelected]}
           >

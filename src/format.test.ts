@@ -2,6 +2,7 @@ import {
   formatCadence,
   formatClock,
   formatDistance,
+  formatDistanceLabel,
   formatDurationLabel,
   formatInterval,
   formatJitter,
@@ -38,6 +39,23 @@ describe('formatDistance', () => {
 
   it('clamps negatives to zero', () => {
     expect(formatDistance(-10)).toBe('0 m');
+  });
+});
+
+describe('formatDistanceLabel', () => {
+  it('spells out the unit for a screen reader', () => {
+    expect(formatDistanceLabel(388)).toBe('388 metres');
+    expect(formatDistanceLabel(1214)).toBe('1.21 kilometres');
+  });
+
+  it('singularises exactly one metre', () => {
+    expect(formatDistanceLabel(1)).toBe('1 metre');
+    expect(formatDistanceLabel(0)).toBe('0 metres');
+    expect(formatDistanceLabel(2)).toBe('2 metres');
+  });
+
+  it('clamps negatives to zero', () => {
+    expect(formatDistanceLabel(-10)).toBe('0 metres');
   });
 });
 

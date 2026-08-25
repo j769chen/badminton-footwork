@@ -6,7 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCues } from '@/cues';
 import { Court } from '@/components/Court';
-import { formatClock, formatDistance } from '@/format';
+import {
+  formatClock,
+  formatDistance,
+  formatDistanceLabel,
+  formatDurationLabel,
+} from '@/format';
 import { useTrainer } from '@/hooks/useTrainer';
 import { Colors, Radius, Spacing } from '@/theme';
 
@@ -45,14 +50,21 @@ export default function TrainScreen() {
   };
 
   const progress = totalMs > 0 ? 1 - remainingMs / totalMs : 0;
+  const progressPercent = Math.min(100, Math.max(0, progress * 100));
   const isComplete = status === 'complete';
   const isCountdown = status === 'countdown';
+
+  const clockLabel = isCountdown
+    ? 'Session not started'
+    : untimed
+      ? `${formatDurationLabel(elapsedMs / 1000)} elapsed`
+      : `${formatDurationLabel(remainingMs / 1000)} remaining`;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.clock}>
+          <Text accessibilityLabel={clockLabel} style={styles.clock}>
             {isCountdown
               ? '--:--'
               : untimed
@@ -62,12 +74,18 @@ export default function TrainScreen() {
           {untimed ? (
             <Text style={styles.clockCaption}>Elapsed - no time limit</Text>
           ) : (
-            <View style={styles.progressTrack}>
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel="Session progress"
+              accessibilityValue={{
+                min: 0,
+                max: 100,
+                now: Math.round(progressPercent),
+              }}
+              style={styles.progressTrack}
+            >
               <View
-                style={[
-                  styles.progressFill,
-                  { width: `${Math.min(100, Math.max(0, progress * 100))}%` },
-                ]}
+                style={[styles.progressFill, { width: `${progressPercent}%` }]}
               />
             </View>
           )}
@@ -75,7 +93,19 @@ export default function TrainScreen() {
 
         <Court activeCorner={activeCorner} />
 
-        <View style={styles.callout}>
+        <View
+          accessible
+          accessibilityLabel={
+            isComplete
+              ? 'Session complete'
+              : isCountdown
+                ? `Get ready. ${countdownSecondsLeft}`
+                : activeCorner
+                  ? `Corner ${activeCorner.number}, ${activeCorner.label}`
+                  : 'No corner called'
+          }
+          style={styles.callout}
+        >
           {isComplete ? (
             <Text style={styles.completeText}>Session complete</Text>
           ) : isCountdown ? (
@@ -96,11 +126,21 @@ export default function TrainScreen() {
         </View>
 
         <View style={styles.stats}>
-          <View style={styles.stat}>
+          <View
+            accessible
+            accessibilityLabel={`${reps} ${reps === 1 ? 'rep' : 'reps'}`}
+            style={styles.stat}
+          >
             <Text style={styles.statValue}>{reps}</Text>
             <Text style={styles.statLabel}>Reps</Text>
           </View>
-          <View style={styles.stat}>
+          <View
+            accessible
+            accessibilityLabel={`Estimated distance, ${formatDistanceLabel(
+              distanceMetres,
+            )}`}
+            style={styles.stat}
+          >
             <Text style={styles.statValue}>
               {formatDistance(distanceMetres)}
             </Text>
@@ -111,6 +151,8 @@ export default function TrainScreen() {
         <View style={styles.controls}>
           {status === 'running' && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Pause session"
               style={({ pressed }) => [styles.control, styles.controlPause, pressed && styles.pressed]}
               onPress={pause}
             >
@@ -120,6 +162,8 @@ export default function TrainScreen() {
 
           {status === 'paused' && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Resume session"
               style={({ pressed }) => [styles.control, styles.controlResume, pressed && styles.pressed]}
               onPress={resume}
             >
@@ -129,6 +173,8 @@ export default function TrainScreen() {
 
           {isComplete && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Restart session"
               style={({ pressed }) => [styles.control, styles.controlResume, pressed && styles.pressed]}
               onPress={start}
             >
@@ -137,6 +183,10 @@ export default function TrainScreen() {
           )}
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              isComplete ? 'Done, back to home' : 'Stop session'
+            }
             style={({ pressed }) => [styles.control, styles.controlStop, pressed && styles.pressed]}
             onPress={handleStop}
           >
