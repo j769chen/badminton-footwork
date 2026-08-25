@@ -72,8 +72,6 @@ describe('normalizedTravel', () => {
   });
 
   it('scales x and y separately, so the deeper move scores higher', () => {
-    // Front-to-rear spans the 6.7 m half-court depth; cross-court spans the
-    // 6.1 m width. The deeper move must earn the larger dwell bonus.
     const frontToRear = normalizedTravel(byNumber(1), byNumber(5));
     const crossCourt = normalizedTravel(byNumber(1), byNumber(2));
     expect(frontToRear).toBeGreaterThan(crossCourt);
@@ -137,7 +135,6 @@ describe('pickNext', () => {
     it('picks the first of the pool when random returns its floor', () => {
       const random = jest.spyOn(Math, 'random').mockReturnValue(0);
       try {
-        // current is pool[0], so the 0th candidate must skip past it.
         expect(pickNext(byNumber(1), 'random', [1, 3, 5]).number).toBe(3);
         expect(pickNext(byNumber(3), 'random', [1, 3, 5]).number).toBe(1);
       } finally {

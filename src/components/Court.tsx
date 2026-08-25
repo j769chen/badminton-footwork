@@ -6,23 +6,14 @@ import { useSettings } from '@/store/settings';
 import { Colors } from '@/theme';
 import { Corner } from './Corner';
 
-// Native court markings come baked into the image, so we just overlay the
-// numbered targets and the centre recovery marker on top of it.
 const courtImage = require('../../assets/images/court.png');
 
-// Keep the container's aspect ratio identical to the source image (719x800)
-// so the painted lines never stretch.
 const COURT_ASPECT_RATIO = 719 / 800;
 
 type CourtProps = {
   activeCorner: CornerModel | null;
 };
 
-/**
- * A badminton court (rendered from the court artwork) showing the numbered
- * footwork targets the user has enabled, plus a centre marker the player
- * returns to between movements.
- */
 export function Court({ activeCorner }: CourtProps) {
   const enabledCorners = useSettings((s) => s.enabledCorners);
 

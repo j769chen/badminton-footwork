@@ -16,28 +16,10 @@ export type TrainerStatus =
   | 'paused'
   | 'complete';
 
-/**
- * Loop resolution. Every hold quantises to this, so it has to stay well under
- * the 0.5s minimum switch interval; it also keeps the counted-off lead-in
- * seconds landing close to their boundary.
- */
 const TICK_MS = 50;
 
-/**
- * Extra dwell time granted to the longest possible movement, as a fraction of
- * the configured switch interval. A target sits lit for
- * `interval * (1 + DISTANCE_TIME_FACTOR * normalizedTravel)`, so the configured
- * interval is the baseline (shortest move) and farther targets get a little
- * more time to reach. Deterministic - depends only on the distance.
- */
 const DISTANCE_TIME_FACTOR = 0.15;
 
-/**
- * Scatter `holdMs` by up to `jitterPct` percent either side, so the cadence
- * cannot be anticipated. Symmetric, so the mean hold equals the configured
- * interval and a session delivers the rep count the settings imply. Floored at
- * one tick because the loop cannot resolve a shorter hold anyway.
- */
 function applyJitter(holdMs: number, jitterPct: number): number {
   if (jitterPct <= 0) return holdMs;
   const fraction = jitterPct / 100;
@@ -52,19 +34,13 @@ function cuePreferences(): CuePreferences {
 
 type Trainer = {
   status: TrainerStatus;
-  /** The target currently lit, or null when nothing is in play. */
   activeCorner: Corner | null;
   remainingMs: number;
   totalMs: number;
-  /** Time elapsed since the session started (excludes paused time). */
   elapsedMs: number;
-  /** Corners called so far this session. */
   reps: number;
-  /** Estimated metres covered so far, assuming a recovery to centre per rep. */
   distanceMetres: number;
-  /** True when the session has no time limit (counts up, never auto-finishes). */
   untimed: boolean;
-  /** Seconds still to count off during the pre-session lead-in. */
   countdownSecondsLeft: number;
   start: () => void;
   pause: () => void;
@@ -72,11 +48,6 @@ type Trainer = {
   stop: () => void;
 };
 
-/**
- * Drift-free training engine. Scheduling is anchored to absolute timestamps
- * (Date.now) rather than accumulating setInterval ticks, so the session length
- * and switch cadence stay accurate even if individual ticks are late.
- */
 export function useTrainer(cues: Cues): Trainer {
   const [status, setStatus] = useState<TrainerStatus>('idle');
   const [activeCorner, setActiveCorner] = useState<Corner | null>(null);
@@ -88,7 +59,6 @@ export function useTrainer(cues: Cues): Trainer {
   const [untimed, setUntimed] = useState(false);
   const [countdownSecondsLeft, setCountdownSecondsLeft] = useState(0);
 
-  // Mutable timing anchors (avoid stale closures inside the tick loop).
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endAtRef = useRef(0);
   const nextSwitchAtRef = useRef(0);
@@ -96,13 +66,9 @@ export function useTrainer(cues: Cues): Trainer {
   const jitterPctRef = useRef(0);
   const activeRef = useRef<Corner | null>(null);
   const untimedRef = useRef(false);
-  // Time remaining until the next switch, captured while paused.
   const pausedSwitchRemainingRef = useRef(0);
-  // Anchors for the count-up elapsed clock (which excludes paused time).
   const segmentStartRef = useRef(0);
   const elapsedBeforeRef = useRef(0);
-  // Lead-in anchors. The countdown reuses `tickRef`, since it never overlaps
-  // the session loop.
   const countdownEndAtRef = useRef(0);
   const countdownAnnouncedRef = useRef(0);
 
@@ -125,7 +91,6 @@ export function useTrainer(cues: Cues): Trainer {
     [cues],
   );
 
-  /** Switch to the next corner and return how long it should stay lit (ms). */
   const advanceCorner = useCallback(() => {
     const prev = activeRef.current;
     const { order, enabledCorners } = useSettings.getState();
@@ -199,7 +164,6 @@ export function useTrainer(cues: Cues): Trainer {
     setDistanceMetres(0);
 
     if (sessionUntimed) {
-      // No countdown: the clock counts up and the session ends only on stop.
       endAtRef.current = Number.POSITIVE_INFINITY;
       setTotalMs(0);
       setRemainingMs(0);
@@ -210,10 +174,6 @@ export function useTrainer(cues: Cues): Trainer {
       setRemainingMs(sessionMs);
     }
 
-    // Immediately show (and cue) the first corner. With no previous target the
-    // travel distance is zero, so its hold is the base interval, jittered - the
-    // user knows when they pressed Start, so an exact first hold would be the
-    // easiest of all to anticipate.
     const first = pickNext(null, order, enabledCorners);
     activeRef.current = first;
     setActiveCorner(first);

@@ -217,16 +217,13 @@ type SliderControlProps = {
   help: string;
   value: number;
   format: (value: number) => string;
-  /** Spoken form of the value, when `format` does not read well aloud. */
   formatLabel?: (value: number) => string;
   min: number;
   max: number;
   step: number;
   onChange: (value: number) => void;
-  /** When true the slider is hidden and the value shows `disabledValueLabel`. */
   disabled?: boolean;
   disabledValueLabel?: string;
-  /** Extra content rendered at the bottom of the card (e.g. a toggle row). */
   footer?: ReactNode;
 };
 
@@ -244,8 +241,6 @@ function SliderControl({
   disabledValueLabel,
   footer,
 }: SliderControlProps) {
-  // Local state drives the visible control for instant feedback; the store is
-  // the source of truth and is kept in sync both ways.
   const [local, setLocal] = useState(value);
 
   useEffect(() => {
@@ -363,7 +358,6 @@ function CornerCheckbox({
   number: number;
   label: string;
   checked: boolean;
-  /** Last remaining selections cannot be cleared. */
   locked: boolean;
   onToggle: () => void;
 }) {

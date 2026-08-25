@@ -5,18 +5,13 @@ import { useEffect } from 'react';
 import { configureAudioSession } from '@/cues';
 import { Colors } from '@/theme';
 
-// Anchor every route to the home screen so deep links / page refreshes (e.g.
-// landing directly on /settings or /train on web) still render a back button
-// to "/" instead of stranding the user with no way home.
 export const unstable_settings = {
   anchor: 'index',
 };
 
 export default function RootLayout() {
   useEffect(() => {
-    // Configure once so cues duck (not stop) any music from Spotify/SoundCloud.
     configureAudioSession().catch(() => {
-      // Non-fatal: the app still works visually if the session can't be set.
     });
   }, []);
 

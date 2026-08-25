@@ -1,29 +1,17 @@
 export type Corner = {
-  /** 1-based number shown to the user. */
   number: number;
   label: string;
-  /** Position as a fraction of the court area (0..1), origin top-left. */
   x: number;
   y: number;
 };
 
-/** Random (avoids immediate repeat) or sequential board order. */
 export type SwitchOrder = 'random' | 'sequential';
 
-/** Display labels for each order, shared by the home summary and the picker. */
 export const ORDER_LABELS: Record<SwitchOrder, string> = {
   random: 'Random',
   sequential: 'Sequential',
 };
 
-/**
- * The footwork targets, arranged as two vertical columns sitting on the
- * court's left and right sidelines. Front = net side (top), Rear = baseline
- * (bottom). The player recovers to the centre between every movement.
- *
- * Left column (1, 3, 5) shares an x; right column (2, 4, 6) shares an x, so the
- * numbers line up vertically along each border.
- */
 const LEFT_X = 0.12;
 const RIGHT_X = 0.88;
 const TOP_Y = 0.14;
@@ -43,27 +31,13 @@ export const ALL_CORNER_NUMBERS: readonly number[] = CORNERS.map(
   (c) => c.number,
 );
 
-/**
- * At least one corner must stay in play. A single corner is a valid drill: the
- * player still moves out to it and recovers to the centre on every cue.
- */
 export const MIN_ENABLED_CORNERS = 1;
 
-/**
- * Real court dimensions, used to turn the fractional corner positions into an
- * estimated distance covered.
- *
- * The corner columns sit on the two sidelines and the front/rear rows on the
- * net and baseline, so `RIGHT_X - LEFT_X` spans the court's width and
- * `BOTTOM_Y - TOP_Y` spans one half-court's depth. The court is not square,
- * so x and y have to be scaled separately before any distance is taken.
- */
 const COURT_WIDTH_M = 6.1;
 const COURT_DEPTH_M = 6.7;
 const METRES_PER_X = COURT_WIDTH_M / (RIGHT_X - LEFT_X);
 const METRES_PER_Y = COURT_DEPTH_M / (BOTTOM_Y - TOP_Y);
 
-/** The centre the player recovers to between every movement. */
 const CENTRE = { x: 0.5, y: 0.5 };
 
 type Point = { x: number; y: number };
@@ -71,78 +45,37 @@ type Point = { x: number; y: number };
 const metresBetween = (a: Point, b: Point) =>
   Math.hypot((a.x - b.x) * METRES_PER_X, (a.y - b.y) * METRES_PER_Y);
 
-/**
- * Estimated metres covered by one rep: out from the centre to `corner` and back
- * again. It deliberately does not depend on the previous target - the drill
- * recovers to the centre every time, so a rep's distance is a property of the
- * corner alone. (`normalizedTravel` measures corner-to-corner instead, because
- * it feeds dwell time rather than distance.)
- *
- * An estimate, not a measurement: it assumes the player takes the direct line
- * and actually returns to the centre.
- */
 export function repMetres(corner: Corner): number {
   return 2 * metresBetween(corner, CENTRE);
 }
 
-/** Longest move between any two targets, used to normalise travel to 0..1. */
 export const MAX_CORNER_TRAVEL_M = CORNERS.reduce((max, a) => {
   for (const b of CORNERS) max = Math.max(max, metresBetween(a, b));
   return max;
 }, 0);
 
-/**
- * How far the player travels from the previous target to the next one,
- * normalised to 0..1 (0 = no previous target / no move, 1 = the longest
- * possible move). Deterministic: depends only on the two positions.
- *
- * The scale stays fixed to the full court, so a narrow selection yields
- * proportionally smaller values rather than being re-stretched to 0..1.
- */
 export function normalizedTravel(prev: Corner | null, next: Corner): number {
   if (prev === null || prev === next) return 0;
   return metresBetween(prev, next) / MAX_CORNER_TRAVEL_M;
 }
 
-/**
- * A selection (`enabled`) holds user-facing corner numbers, so these two are
- * the only places that know membership is keyed by `corner.number`. Screens ask
- * via one or the other rather than reaching for the numbers themselves.
- */
 export const isCornerEnabled = (
   enabled: readonly number[],
   corner: Corner,
 ): boolean => enabled.includes(corner.number);
 
-/**
- * The corners currently in play, in board order. Unknown numbers are ignored,
- * so the result is always a subset of `CORNERS`.
- */
 export function enabledCornerList(enabled: readonly number[]): Corner[] {
   return CORNERS.filter((corner) => isCornerEnabled(enabled, corner));
 }
 
-/**
- * Pick the next target given the current one, restricted to the corners the
- * user has enabled.
- * - `random`: uniform over the other enabled corners (never repeats immediately).
- * - `sequential`: walks the enabled corners in board order, wrapping around.
- *
- * Precondition: `enabled` names at least one real corner. The settings store
- * normalises the selection on every write and on rehydration, so an empty pool
- * cannot reach here.
- */
 export function pickNext(
   current: Corner | null,
   order: SwitchOrder,
   enabled: readonly number[],
 ): Corner {
   const pool = enabledCornerList(enabled);
-  // A single corner repeats: each cue is one out-and-back rep.
   if (pool.length === 1) return pool[0];
 
-  // A `current` outside the pool (its corner was just deselected) restarts the
-  // walk rather than anchoring the next pick to a target that is no longer lit.
   const at = current === null ? -1 : pool.indexOf(current);
 
   if (order === 'sequential') {
