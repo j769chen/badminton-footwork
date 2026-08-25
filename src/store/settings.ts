@@ -12,12 +12,33 @@ import {
 export type Settings = {
   switchIntervalSec: number;
   sessionDurationSec: number;
+  /**
+   * When true the session has no time limit: it counts up and only ends when
+   * the user stops it. `sessionDurationSec` is preserved so toggling the limit
+   * back on restores the previously chosen length.
+   */
   sessionUntimed: boolean;
+  /**
+   * Random variation applied to each hold, as a percentage of the configured
+   * interval. Symmetric, so the average cadence still matches the setting.
+   * Zero makes every hold exactly as configured.
+   */
   switchJitterPct: number;
   cueMode: CueMode;
+  /** Whether each switch also fires a haptic pulse, independent of `cueMode`. */
   hapticCueEnabled: boolean;
+  /**
+   * Seconds counted down before the first corner lights, so you can get set.
+   * Zero starts the drill immediately.
+   */
   leadInSec: number;
   order: SwitchOrder;
+  /**
+   * Corner numbers in play, as shown on the court: always at least
+   * `MIN_ENABLED_CORNERS` real corners, deduped and in board order. Readonly so
+   * the array can be shared with `DEFAULT_SETTINGS` without risk of in-place
+   * edits leaking into the defaults.
+   */
   enabledCorners: readonly number[];
 };
 
@@ -43,6 +64,7 @@ export const DEFAULT_SETTINGS: Settings = {
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+/** Round to one decimal place (tenths of a second), avoiding float drift. */
 const roundTenths = (value: number) => Math.round(value * 10) / 10;
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -87,21 +109,39 @@ export function normalizeOrder(value: unknown): SwitchOrder {
 const normalizeFlag = (value: unknown, fallback: boolean) =>
   typeof value === 'boolean' ? value : fallback;
 
+/**
+ * Coerce a persisted selection back into the invariant `Settings.enabledCorners`
+ * promises: real corner numbers only, deduped, in board order, never empty.
+ * Filtering `ALL_CORNER_NUMBERS` delivers all four properties in one pass.
+ *
+ * Anything unusable - a missing field from an older build, a hand-edited or
+ * corrupt value, a selection naming only corners that no longer exist - falls
+ * back to the full court, which is what those users last saw.
+ */
 export function normalizeEnabledCorners(value: unknown): readonly number[] {
   if (!Array.isArray(value)) return ALL_CORNER_NUMBERS;
   const kept = ALL_CORNER_NUMBERS.filter((number) => value.includes(number));
   return kept.length >= MIN_ENABLED_CORNERS ? kept : ALL_CORNER_NUMBERS;
 }
 
+/**
+ * Bring a persisted payload up to the current schema. Works on a copy, so a
+ * caller's stored object is never mutated.
+ */
 export function migrateSettings(
   persisted: unknown,
   version: number,
 ): Partial<Settings> {
   const state = { ...((persisted ?? {}) as Record<string, unknown>) };
+  // v0 stored session length in minutes as `sessionDurationMin`.
   if (version < 1 && typeof state.sessionDurationMin === 'number') {
     state.sessionDurationSec = state.sessionDurationMin * 60;
     delete state.sessionDurationMin;
   }
+  // v2 added `enabledCorners`. v1 payloads simply lack the field, which
+  // `normalizeSettings` turns into the full court, so there is nothing to
+  // migrate here.
+  // v3 replaced the `audioCueEnabled` boolean with a three-way `cueMode`.
   if (version < 3 && typeof state.audioCueEnabled === 'boolean') {
     state.cueMode = state.audioCueEnabled ? 'beep' : 'off';
     delete state.audioCueEnabled;
@@ -109,6 +149,13 @@ export function migrateSettings(
   return state as Partial<Settings>;
 }
 
+/**
+ * Force a candidate payload to satisfy every `Settings` invariant. Every
+ * rehydration passes through here, so this is the one place the invariants have
+ * to hold - which is why `pickNext` can trust its pool instead of guarding an
+ * empty one, and why a stored value that is now out of range (or a v0 payload
+ * migrated past `max`) cannot drive a session.
+ */
 export function normalizeSettings(value: Partial<Settings>): Settings {
   return {
     switchIntervalSec: normalizeSwitchInterval(value.switchIntervalSec),
@@ -140,6 +187,7 @@ type SettingsState = Settings & {
   setHapticCueEnabled: (value: boolean) => void;
   setLeadIn: (value: number) => void;
   setOrder: (value: SwitchOrder) => void;
+  /** No-op when it would drop below `MIN_ENABLED_CORNERS`. */
   toggleCorner: (number: number) => void;
   reset: () => void;
 };

@@ -7,6 +7,7 @@ export const CORNER_SIZE = 60;
 
 type CornerProps = {
   number: number;
+  /** Position as a fraction of the parent (0..1). */
   x: number;
   y: number;
   active: boolean;

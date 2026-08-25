@@ -1,3 +1,8 @@
+/**
+ * Design tokens for the Badminton Footwork Trainer.
+ * Single dark palette tuned for high contrast in a gym / court setting.
+ */
+
 export const Colors = {
   background: '#0B1120',
   surface: '#141C2E',

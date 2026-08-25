@@ -39,6 +39,8 @@ export default function HomeScreen() {
 
         <View style={styles.previewGrid}>
           {CORNERS.map((corner) => {
+            // Deselected corners stay in the grid, dimmed, so the layout holds
+            // and it is obvious which ones sit out.
             const enabled = isCornerEnabled(enabledCorners, corner);
             return (
               <View
