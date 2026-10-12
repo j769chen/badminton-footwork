@@ -251,10 +251,15 @@ function SliderControl({
     setLocal(value);
   }, [value]);
 
+  const span = max - min;
+
   const snap = (n: number) => {
     const clamped = Math.min(max, Math.max(min, n));
-    return step < 1 ? Math.round(clamped * 10) / 10 : Math.round(clamped);
+    const stepped = min + Math.round((clamped - min) / step) * step;
+    return Math.round(stepped * 10) / 10;
   };
+
+  const fromFraction = (fraction: number) => min + fraction * span;
 
   const commit = (n: number) => {
     const next = snap(n);
@@ -295,12 +300,11 @@ function SliderControl({
             style={styles.slider}
             accessibilityLabel={label}
             accessibilityValue={{ text: spoken }}
-            minimumValue={min}
-            maximumValue={max}
-            step={step}
-            value={local}
-            onValueChange={setLocal}
-            onSlidingComplete={commit}
+            minimumValue={0}
+            maximumValue={1}
+            value={(local - min) / span}
+            onValueChange={(fraction) => setLocal(snap(fromFraction(fraction)))}
+            onSlidingComplete={(fraction) => commit(fromFraction(fraction))}
             minimumTrackTintColor={Colors.accent}
             maximumTrackTintColor={Colors.border}
             thumbTintColor={Colors.accent}
